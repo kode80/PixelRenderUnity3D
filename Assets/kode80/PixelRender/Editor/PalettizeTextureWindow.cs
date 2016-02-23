@@ -83,7 +83,6 @@ namespace kode80.PixelRender
 				// have artifacts which result in more unique colors being detected
 				// than exist in the original, uncompressed texture.
 				string texturePath = AssetDatabase.GetAssetPath( texture);
-				TextureImporter importer = AssetImporter.GetAtPath( texturePath) as TextureImporter;
 				UpdateTextureImportSettings( texturePath, false, true);
 				texture = AssetDatabase.LoadAssetAtPath<Texture2D>( texturePath);
 				_guiTexture.texture = texture;
