@@ -1,0 +1,2 @@
+# PixelRenderUnity3D
+PixelRender is a complete system of shaders, effects, scripts & tools for rendering 3D scenes as 2D pixel art. The key components are the PixelArt shader for rendering meshs using palette based shading, the PixelOutline image effect for drawing pixel-perfect outlines & the Palette Editor which provides several features for creating, generating & manipulating palettes used by the PixelArt shader directly within Unity3D. PixelRender also includes components for quantizing animation, several examples & full documentation (in both pdf & epub format).
