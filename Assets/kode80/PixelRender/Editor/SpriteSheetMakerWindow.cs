@@ -22,7 +22,10 @@ namespace kode80.PixelRender
 {
 	public class SpriteSheetMakerWindow : EditorWindow
 	{
-		private GUIVertical _gui;
+		private GUIHorizontal _gui;
+		private GUIVertical _guiSide;
+		private GUIVertical _guiPreview;
+		private RenderTexture _previewTexture;
 
 		[MenuItem( "Window/kode80/PixelRender/Sprite Sheet Maker")]
 		public static void Init()
@@ -34,12 +37,26 @@ namespace kode80.PixelRender
 
 		void OnEnable()
 		{
-			_gui = new GUIVertical();
+			_gui = new GUIHorizontal();
+
+			_guiSide = _gui.Add( new GUIVertical( GUILayout.MaxWidth(290.0f))) as GUIVertical;
+			_guiSide.Add( new GUIButton( new GUIContent( "Test")));
+
+			_guiPreview = _gui.Add( new GUIVertical( GUILayout.ExpandWidth( true), GUILayout.ExpandHeight( true))) as GUIVertical;
+			_guiPreview.shouldStoreLastRect = true;
+
+			_previewTexture = new RenderTexture( 100, 100, 0);
+			RenderTexture.active = _previewTexture;
+			Graphics.Blit( Texture2D.blackTexture, _previewTexture);
+			RenderTexture.active = null;
 		}
 
 		void OnDisable()
 		{
 			_gui = null;
+			_guiSide = null;
+			_guiPreview = null;
+			_previewTexture = null;
 		}
 
 		void OnGUI()
@@ -47,6 +64,11 @@ namespace kode80.PixelRender
 			if( _gui != null)
 			{
 				_gui.OnGUI();
+
+				if( Event.current.rawType == EventType.Repaint && _previewTexture != null)
+				{
+					EditorGUI.DrawPreviewTexture( _guiPreview.lastRect, _previewTexture);
+				}
 			}
 		}
 	}
