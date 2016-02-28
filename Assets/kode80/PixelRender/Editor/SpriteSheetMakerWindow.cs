@@ -25,7 +25,10 @@ namespace kode80.PixelRender
 		private GUIHorizontal _gui;
 		private GUIVertical _guiSide;
 		private GUIVertical _guiPreview;
+
 		private RenderTexture _previewTexture;
+		private Camera _previewCamera;
+		private PixelOutlineEffect _previewOutline;
 
 		[MenuItem( "Window/kode80/PixelRender/Sprite Sheet Maker")]
 		public static void Init()
@@ -46,9 +49,7 @@ namespace kode80.PixelRender
 			_guiPreview.shouldStoreLastRect = true;
 
 			_previewTexture = new RenderTexture( 100, 100, 0);
-			RenderTexture.active = _previewTexture;
-			Graphics.Blit( Texture2D.blackTexture, _previewTexture);
-			RenderTexture.active = null;
+			InitPreviewCamera();
 		}
 
 		void OnDisable()
@@ -67,9 +68,53 @@ namespace kode80.PixelRender
 
 				if( Event.current.rawType == EventType.Repaint && _previewTexture != null)
 				{
-					EditorGUI.DrawPreviewTexture( _guiPreview.lastRect, _previewTexture);
+					Rect rect = SizeRectToFit( new Rect( 0.0f, 0.0f, _previewCamera.pixelWidth, _previewTexture.height),
+											   _guiPreview.lastRect);
+					EditorGUI.DrawPreviewTexture( rect, _previewTexture);
 				}
 			}
+		}
+
+		private void InitPreviewCamera()
+		{
+			const string gameObjectName = "com.kode80.PixelRender.SpriteSheetMaker.PreviewCamera";
+
+			GameObject cameraGO = GameObject.Find( gameObjectName);
+			if( cameraGO == null)
+			{
+				cameraGO = EditorUtility.CreateGameObjectWithHideFlags( gameObjectName, 
+																		HideFlags.HideAndDontSave, 
+																		typeof(Camera), 
+																		typeof( PixelOutlineEffect));
+			}
+
+			_previewCamera = cameraGO.GetComponent<Camera>();
+			_previewOutline = cameraGO.GetComponent<PixelOutlineEffect>();
+
+			_previewCamera.targetTexture = _previewTexture;
+			_previewCamera.Render();
+		}
+
+		private Rect SizeRectToFit( Rect input, Rect container, bool clip=true)
+		{
+			float scale = Mathf.Min( container.width/input.width, container.height/input.height);
+			scale = Mathf.Max( 1.0f, Mathf.Floor( scale));
+			input.width *= scale;
+			input.height *= scale;
+			input.x = (container.width - input.width) * 0.5f + container.x;
+			input.y = (container.height - input.height) * 0.5f + container.y;
+
+			if( clip &&
+				(input.x < container.x || input.y < container.y ||
+				 input.right > container.right || input.bottom > container.bottom))
+			{
+				input.x = Mathf.Max( input.x, container.x);
+				input.y = Mathf.Max( input.y, container.y);
+				input.width = Mathf.Min( input.x + input.width, container.width);
+				input.height = Mathf.Min( input.y + input.height, container.height);
+			}
+
+			return input;
 		}
 	}
 }
