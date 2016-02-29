@@ -25,6 +25,8 @@ namespace kode80.PixelRender
 {
 	public class PalettizeTextureWindow : EditorWindow
 	{
+		private const int ProgressUpdateFreq = 100000;
+
 		private GUIVertical _gui;
 		private GUITextureField _guiTexture;
 		private GUITextureField _guiPalette;
@@ -99,8 +101,19 @@ namespace kode80.PixelRender
 				palettizedTexture.Apply();
 				RenderTexture.active = null;
 
-				_guiPalette.texture = PalettizeTexture( palettizedTexture, 4);
-				_guiPalettizedTexture.texture = palettizedTexture;
+				Texture2D palette = PalettizeTexture( palettizedTexture, 4);
+
+				if( palette == null)
+				{
+					_guiTexture.texture = null;
+					_guiPalette.texture = null;
+					_guiPalettizedTexture.texture = null;
+				}
+				else
+				{
+					_guiPalette.texture = palette;
+					_guiPalettizedTexture.texture = palettizedTexture;
+				}
 			}
 			else
 			{
@@ -164,6 +177,11 @@ namespace kode80.PixelRender
 		{
 			Color32[] data = texture.GetPixels32();
 			Color32[] uniqueColors = GetUniqueColors( data);
+			if( uniqueColors == null)
+			{
+				return null;
+			}
+
 			int uniqueCount = uniqueColors.Length;
 
 			for( int i=0; i<data.Length; i++)
@@ -171,7 +189,19 @@ namespace kode80.PixelRender
 				byte paletteIndex = (byte) Array.IndexOf( uniqueColors, data[i]);
 				paletteIndex = (byte) ( ((float)paletteIndex / (float)(uniqueCount - 1)) * 255.0f);
 				data[ i] = new Color32( paletteIndex, paletteIndex, paletteIndex, 255);
+
+				if( i % ProgressUpdateFreq == 0)
+				{
+					if( EditorUtility.DisplayCancelableProgressBar( "Converting", 
+																	"Generating index texture", 
+																	(float)i / (float) data.Length))
+					{
+						EditorUtility.ClearProgressBar();
+						return null;
+					}
+				}
 			}
+			EditorUtility.ClearProgressBar();
 
 			texture.SetPixels32( data);
 			texture.Apply();
@@ -207,6 +237,17 @@ namespace kode80.PixelRender
 			for( int i=0; i<data.Length; i++)
 			{
 				hash.Add( data[ i]);
+
+				if( i % ProgressUpdateFreq == 0)
+				{
+					if( EditorUtility.DisplayCancelableProgressBar( "Converting", 
+																	"Calculating unique colors", 
+																	(float)i / (float) data.Length))
+					{
+						EditorUtility.ClearProgressBar();
+						return null;
+					}
+				}
 			}
 
 			Color32[] uniqueColors = new Color32[ hash.Count];
