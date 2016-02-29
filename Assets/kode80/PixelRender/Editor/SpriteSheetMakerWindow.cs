@@ -110,6 +110,8 @@ namespace kode80.PixelRender
 			_previewOutline.depthThreshold = 0.0001f;
 
 			_previewCamera.targetTexture = _previewTexture;
+			_previewCamera.clearFlags = CameraClearFlags.SolidColor;
+			_previewCamera.backgroundColor = Color.gray;
 			_previewCamera.cullingMask = 1 << _PreviewLayer;
 			_previewCamera.transform.position = new Vector3( 0.0f, 0.0f, -6.0f);
 			_previewCamera.enabled = false;
