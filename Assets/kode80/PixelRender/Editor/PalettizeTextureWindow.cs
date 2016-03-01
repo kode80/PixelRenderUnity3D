@@ -178,7 +178,7 @@ namespace kode80.PixelRender
 		private Texture2D PalettizeTexture( Texture2D texture, int shades)
 		{
 			Color32[] data = texture.GetPixels32();
-			Color32[] uniqueColors = GetUniqueColors( data);
+			UInt32[] uniqueColors = GetUniqueColors( data);
 			if( uniqueColors == null)
 			{
 				return null;
@@ -188,7 +188,7 @@ namespace kode80.PixelRender
 
 			for( int i=0; i<data.Length; i++)
 			{
-				byte paletteIndex = (byte) Array.IndexOf( uniqueColors, data[i]);
+				byte paletteIndex = (byte) Array.IndexOf( uniqueColors, data[i].ToRGBAUInt32());
 				paletteIndex = (byte) ( ((float)paletteIndex / (float)(uniqueCount - 1)) * 255.0f);
 				data[ i] = new Color32( paletteIndex, paletteIndex, paletteIndex, 255);
 
@@ -211,7 +211,7 @@ namespace kode80.PixelRender
 			return CreatePaletteTexture( uniqueColors, shades);
 		}
 
-		private Texture2D CreatePaletteTexture( Color32[] colors, int shades)
+		private Texture2D CreatePaletteTexture( UInt32[] colors, int shades)
 		{
 			Texture2D palette = new Texture2D( colors.Length, shades);
 			palette.filterMode = FilterMode.Point;
@@ -222,7 +222,7 @@ namespace kode80.PixelRender
 			{
 				for( int y=0; y<palette.height; y++)
 				{
-					data[ y * palette.width + x] = colors[x];
+					data[ y * palette.width + x] = Color32Util.FromRGBAUint32( colors[x]);
 				}
 			}
 
@@ -232,7 +232,7 @@ namespace kode80.PixelRender
 			return palette;
 		}
 
-		private Color32[] GetUniqueColors( Color32[] data)
+		private UInt32[] GetUniqueColors( Color32[] data)
 		{
 			HashSet<UInt32> hash = new HashSet<UInt32>();
 			int i;
@@ -252,13 +252,8 @@ namespace kode80.PixelRender
 				}
 			}
 
-			Color32[] uniqueColors = new Color32[ hash.Count];
-			i=0;
-			foreach( UInt32 color in hash)
-			{
-				uniqueColors[ i++] = Color32Util.FromRGBAUint32( color);
-			}
-
+			UInt32[] uniqueColors = new UInt32[ hash.Count];
+			hash.CopyTo( uniqueColors);
 			return uniqueColors;
 		}
 	}
