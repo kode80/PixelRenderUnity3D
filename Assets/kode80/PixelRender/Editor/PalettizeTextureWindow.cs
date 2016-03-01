@@ -20,6 +20,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using kode80.GUIWrapper;
+using kode80.ExtensionMethods;
+using kode80.Utils;
 
 namespace kode80.PixelRender
 {
@@ -232,11 +234,11 @@ namespace kode80.PixelRender
 
 		private Color32[] GetUniqueColors( Color32[] data)
 		{
-			HashSet<Color32> hash = new HashSet<Color32>();
-
-			for( int i=0; i<data.Length; i++)
+			HashSet<UInt32> hash = new HashSet<UInt32>();
+			int i;
+			for( i=0; i<data.Length; i++)
 			{
-				hash.Add( data[ i]);
+				hash.Add( data[i].ToRGBAUInt32());
 
 				if( i % ProgressUpdateFreq == 0)
 				{
@@ -251,7 +253,11 @@ namespace kode80.PixelRender
 			}
 
 			Color32[] uniqueColors = new Color32[ hash.Count];
-			hash.CopyTo( uniqueColors);
+			i=0;
+			foreach( UInt32 color in hash)
+			{
+				uniqueColors[ i++] = Color32Util.FromRGBAUint32( color);
+			}
 
 			return uniqueColors;
 		}
