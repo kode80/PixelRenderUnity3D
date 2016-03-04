@@ -32,6 +32,7 @@ namespace kode80.PixelRender
 		private GUIVertical _gui;
 		private GUITextureField _guiTexture;
 		private GUITextureField _guiPalette;
+		private GUIIntSlider _guiMaxColors;
 		private GUITextureField _guiPalettizedTexture;
 		private GUIButton _guiSave;
 
@@ -46,7 +47,10 @@ namespace kode80.PixelRender
 		void OnEnable()
 		{
 			_gui = new GUIVertical();
-			_guiTexture = _gui.Add( new GUITextureField( new GUIContent( "Texture"), TextureChanged)) as GUITextureField;
+			_guiTexture = _gui.Add( new GUITextureField( new GUIContent( "Texture"))) as GUITextureField;
+			_guiMaxColors = _gui.Add( new GUIIntSlider( new GUIContent( "Max Colors"), 2, 2, 32)) as GUIIntSlider;
+			_gui.Add( new GUIButton( new GUIContent( "Convert"), ConvertClicked));
+			_gui.Add( new GUISpace());
 			_guiPalette = _gui.Add( new GUITextureField( new GUIContent( "Palette"), null)) as GUITextureField;
 			_guiPalettizedTexture = _gui.Add( new GUITextureField( new GUIContent( "Palettized Texture"), null)) as GUITextureField;
 			_guiSave = _gui.Add( new GUIButton( new GUIContent( "Save Palette & Texture"), SaveClicked)) as GUIButton;
@@ -62,6 +66,7 @@ namespace kode80.PixelRender
 			_guiTexture = null;
 			_guiPalette = null;
 			_guiPalettizedTexture = null;
+			_guiMaxColors = null;
 			_guiSave = null;
 		}
 
@@ -75,7 +80,7 @@ namespace kode80.PixelRender
 
 		#region GUI Actions
 
-		private void TextureChanged( GUIBase sender)
+		private void ConvertClicked( GUIBase sender)
 		{
 			Texture2D texture = _guiTexture.texture;
 
@@ -103,7 +108,7 @@ namespace kode80.PixelRender
 				palettizedTexture.Apply();
 				RenderTexture.active = null;
 
-				Texture2D palette = PalettizeTexture( palettizedTexture, 4);
+				Texture2D palette = PalettizeTexture( palettizedTexture, _guiMaxColors.value, 4);
 
 				if( palette == null)
 				{
@@ -175,7 +180,7 @@ namespace kode80.PixelRender
 			return Path.Combine( directory, String.Concat( name, suffix, extension));
 		}
 
-		private Texture2D PalettizeTexture( Texture2D texture, int shades)
+		private Texture2D PalettizeTexture( Texture2D texture, int maxColors, int shades)
 		{
 			Color32[] data = texture.GetPixels32();
 			UInt32[] uniqueColors = GetUniqueColors( data);
@@ -184,7 +189,7 @@ namespace kode80.PixelRender
 				return null;
 			}
 
-			PaletteKMeans kMeans = new PaletteKMeans( new List<UInt32>( uniqueColors), 16, 30);
+			PaletteKMeans kMeans = new PaletteKMeans( new List<UInt32>( uniqueColors), maxColors, 30);
 
 			int uniqueCount = kMeans.palette.Count;
 
