@@ -22,6 +22,9 @@ namespace kode80.PixelRender
 {
 	public class SpriteSheetMakerWindow : EditorWindow
 	{
+		private const string _RootName = "com.kode80.PixelRender.SpriteSheetMaker.RootGameObject";
+		private const string _ModelName = "com.kode80.PixelRender.SpriteSheetMaker.ModelGameObject";
+		private const string _CameraName = "com.kode80.PixelRender.SpriteSheetMaker.PreviewCamera";
 		private const int _PreviewLayer = 31;
 
 		private GUIHorizontal _gui;
@@ -33,6 +36,9 @@ namespace kode80.PixelRender
 		private PixelOutlineEffect _previewOutline;
 		private GameObject _rootGameObject;
 		private GameObject _modelGameObject;
+		private float _lastFrameTime;
+
+		private float _test = 0.0f;
 
 		[MenuItem( "Window/kode80/PixelRender/Sprite Sheet Maker")]
 		public static void Init()
@@ -44,10 +50,13 @@ namespace kode80.PixelRender
 
 		void OnEnable()
 		{
+			_lastFrameTime = Time.realtimeSinceStartup;
+
 			_gui = new GUIHorizontal();
 
 			_guiSide = _gui.Add( new GUIVertical( GUILayout.MaxWidth(290.0f))) as GUIVertical;
-			_guiSide.Add( new GUIButton( new GUIContent( "Test")));
+			_guiSide.Add( new GUIObjectField<GameObject>( new GUIContent( "GameObject", "GameObject to render as sprite sheet"),
+														  true, GameObjectChanged));
 
 			_guiPreview = _gui.Add( new GUIVertical( GUILayout.ExpandWidth( true), GUILayout.ExpandHeight( true))) as GUIVertical;
 			_guiPreview.shouldStoreLastRect = true;
@@ -69,13 +78,23 @@ namespace kode80.PixelRender
 			_modelGameObject = null;
 		}
 
+		void Update()
+		{
+			float fps = 1.0f / 10.0f;
+
+			if( _lastFrameTime <= Time.realtimeSinceStartup - fps)
+			{
+				_lastFrameTime = Time.realtimeSinceStartup;
+			}
+		}
+
 		void OnGUI()
 		{
 			if( _gui != null)
 			{
 				_gui.OnGUI();
 
-				if( Event.current.rawType == EventType.Repaint && _previewTexture != null)
+				if( Event.current.rawType == EventType.Repaint && _previewTexture != null && _previewCamera != null)
 				{
 					Rect rect = SizeRectToFit( new Rect( 0.0f, 0.0f, _previewCamera.pixelWidth, _previewTexture.height),
 											   _guiPreview.lastRect);
@@ -83,6 +102,32 @@ namespace kode80.PixelRender
 				}
 			}
 		}
+
+		#region GUI Callbacks
+
+		private void GameObjectChanged( GUIBase sender)
+		{
+			GUIObjectField<GameObject> gameObjectField = sender as GUIObjectField<GameObject>;
+
+			if( _modelGameObject != null)
+			{
+				_modelGameObject.transform.parent = null;
+				DestroyImmediate( _modelGameObject);
+			}
+
+			_modelGameObject = GameObject.Instantiate( gameObjectField.value);
+			Debug.Log( "GameObject assigned: " + _modelGameObject.GetType());
+			_modelGameObject.name = _ModelName;
+			_modelGameObject.hideFlags = HideFlags.HideAndDontSave;
+			_modelGameObject.layer = _PreviewLayer;
+			_modelGameObject.transform.parent = _rootGameObject.transform;
+			_modelGameObject.transform.localPosition = Vector3.zero;
+
+			RenderPreview();
+			//Repaint();
+		}
+
+		#endregion
 
 		private void InitPreviewRenderTexture()
 		{
@@ -93,12 +138,11 @@ namespace kode80.PixelRender
 
 		private void InitPreviewCamera()
 		{
-			const string gameObjectName = "com.kode80.PixelRender.SpriteSheetMaker.PreviewCamera";
 
-			GameObject cameraGO = GameObject.Find( gameObjectName);
+			GameObject cameraGO = GameObject.Find( _CameraName);
 			if( cameraGO == null)
 			{
-				cameraGO = EditorUtility.CreateGameObjectWithHideFlags( gameObjectName, 
+				cameraGO = EditorUtility.CreateGameObjectWithHideFlags( _CameraName, 
 																		HideFlags.HideAndDontSave, 
 																		typeof(Camera), 
 																		typeof( PixelOutlineEffect));
@@ -119,26 +163,34 @@ namespace kode80.PixelRender
 
 		private void InitRootGameObject()
 		{
-			const string rootName = "com.kode80.PixelRender.SpriteSheetMaker.RootGameObject";
-			const string modelName = "com.kode80.PixelRender.SpriteSheetMaker.ModelGameObject";
-
-			_rootGameObject = GameObject.Find( rootName);
+			Debug.Log( "InitRootGameObject");
+			_rootGameObject = GameObject.Find( _RootName);
 			if( _rootGameObject == null)
 			{
 				Debug.Log("Creating preview root");
-				_rootGameObject = EditorUtility.CreateGameObjectWithHideFlags( rootName, 
+				_rootGameObject = EditorUtility.CreateGameObjectWithHideFlags( _RootName, 
 																			   HideFlags.HideAndDontSave);
+			}
+			else
+			{
+				Debug.Log( "Root GameObject already exists");
 			}
 
 			// Use transform.Find, as model may be deactivated
-			Transform transform = _rootGameObject.transform.Find( modelName);
+			Transform transform = _rootGameObject.transform.Find( _ModelName);
 			_modelGameObject = transform == null ? null : transform.gameObject;
 			if( _modelGameObject == null)
 			{
+				Debug.Log("Creating model gameobject");
+
 				_modelGameObject = GameObject.CreatePrimitive( PrimitiveType.Sphere);
 				_modelGameObject.hideFlags = HideFlags.HideAndDontSave;
-				_modelGameObject.name = modelName;
+				_modelGameObject.name = _ModelName;
 				_modelGameObject.transform.parent = _rootGameObject.transform;
+			}
+			else
+			{
+				Debug.Log("Model gameobject already exists");
 			}
 
 			_rootGameObject.transform.position = Vector3.zero;
@@ -173,9 +225,14 @@ namespace kode80.PixelRender
 
 		private void RenderPreview()
 		{
-			_modelGameObject.SetActive( true);
-			_previewCamera.Render();
-			_modelGameObject.SetActive( false);
+			string type = _modelGameObject == null ? "null" : _modelGameObject.GetType().ToString();
+			Debug.Log( "RenderPreview: " + type);
+			if( _modelGameObject != null)
+			{
+				_modelGameObject.SetActive( true);
+				_previewCamera.Render();
+				_modelGameObject.SetActive( false);
+			}
 		}
 	}
 }
