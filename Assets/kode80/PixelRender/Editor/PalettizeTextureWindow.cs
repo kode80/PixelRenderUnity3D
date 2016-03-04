@@ -31,8 +31,9 @@ namespace kode80.PixelRender
 
 		private GUIVertical _gui;
 		private GUITextureField _guiTexture;
-		private GUITextureField _guiPalette;
 		private GUIIntSlider _guiMaxColors;
+		private GUIButton _guiConvert;
+		private GUITextureField _guiPalette;
 		private GUITextureField _guiPalettizedTexture;
 		private GUIButton _guiSave;
 
@@ -47,9 +48,9 @@ namespace kode80.PixelRender
 		void OnEnable()
 		{
 			_gui = new GUIVertical();
-			_guiTexture = _gui.Add( new GUITextureField( new GUIContent( "Texture"))) as GUITextureField;
-			_guiMaxColors = _gui.Add( new GUIIntSlider( new GUIContent( "Max Colors"), 2, 2, 32)) as GUIIntSlider;
-			_gui.Add( new GUIButton( new GUIContent( "Convert"), ConvertClicked));
+			_guiTexture = _gui.Add( new GUITextureField( new GUIContent( "Texture"), TextureChanged)) as GUITextureField;
+			_guiMaxColors = _gui.Add( new GUIIntSlider( new GUIContent( "Max Colors"), 32, 2, 32)) as GUIIntSlider;
+			_guiConvert = _gui.Add( new GUIButton( new GUIContent( "Convert"), ConvertClicked)) as GUIButton;
 			_gui.Add( new GUISpace());
 			_guiPalette = _gui.Add( new GUITextureField( new GUIContent( "Palette"), null)) as GUITextureField;
 			_guiPalettizedTexture = _gui.Add( new GUITextureField( new GUIContent( "Palettized Texture"), null)) as GUITextureField;
@@ -58,15 +59,17 @@ namespace kode80.PixelRender
 			_guiPalette.isEnabled = false;
 			_guiPalettizedTexture.isEnabled = false;
 			_guiSave.isEnabled = false;
+			_guiConvert.isEnabled = false;
 		}
 
 		void OnDisable()
 		{
 			_gui = null;
 			_guiTexture = null;
+			_guiMaxColors = null;
+			_guiConvert = null;
 			_guiPalette = null;
 			_guiPalettizedTexture = null;
-			_guiMaxColors = null;
 			_guiSave = null;
 		}
 
@@ -79,6 +82,14 @@ namespace kode80.PixelRender
 		}
 
 		#region GUI Actions
+
+		private void TextureChanged( GUIBase sender)
+		{
+			_guiConvert.isEnabled = _guiTexture.texture != null;
+			_guiPalette.texture = null;
+			_guiPalettizedTexture.texture = null;
+			_guiSave.isEnabled = false;
+		}
 
 		private void ConvertClicked( GUIBase sender)
 		{
