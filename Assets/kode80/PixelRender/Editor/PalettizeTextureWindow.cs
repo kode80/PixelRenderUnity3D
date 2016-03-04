@@ -184,11 +184,13 @@ namespace kode80.PixelRender
 				return null;
 			}
 
-			int uniqueCount = uniqueColors.Length;
+			PaletteKMeans kMeans = new PaletteKMeans( new List<UInt32>( uniqueColors), 16, 30);
+
+			int uniqueCount = kMeans.palette.Count;
 
 			for( int i=0; i<data.Length; i++)
 			{
-				byte paletteIndex = (byte) Array.IndexOf( uniqueColors, data[i].ToRGBAUInt32());
+				byte paletteIndex = (byte) kMeans.GetIndex( data[i].ToRGBAUInt32());
 				paletteIndex = (byte) ( ((float)paletteIndex / (float)(uniqueCount - 1)) * 255.0f);
 				data[ i] = new Color32( paletteIndex, paletteIndex, paletteIndex, 255);
 
@@ -208,12 +210,12 @@ namespace kode80.PixelRender
 			texture.SetPixels32( data);
 			texture.Apply();
 
-			return CreatePaletteTexture( uniqueColors, shades);
+			return CreatePaletteTexture( kMeans.palette, shades);
 		}
 
-		private Texture2D CreatePaletteTexture( UInt32[] colors, int shades)
+		private Texture2D CreatePaletteTexture( List<UInt32> colors, int shades)
 		{
-			Texture2D palette = new Texture2D( colors.Length, shades);
+			Texture2D palette = new Texture2D( colors.Count, shades);
 			palette.filterMode = FilterMode.Point;
 			palette.wrapMode = TextureWrapMode.Clamp;
 			Color32[] data = palette.GetPixels32();
@@ -255,6 +257,120 @@ namespace kode80.PixelRender
 			UInt32[] uniqueColors = new UInt32[ hash.Count];
 			hash.CopyTo( uniqueColors);
 			return uniqueColors;
+		}
+
+		private Dictionary<UInt32, UInt32> GetHistogram( Color32[] data)
+		{
+			Dictionary<UInt32, UInt32> histogram = new Dictionary<UInt32, UInt32>();
+			int i;
+			UInt32 color;
+
+			for( i=0; i<data.Length; i++)
+			{
+				color = data[i].ToRGBAUInt32();
+				if( histogram.ContainsKey( color)) { histogram[ color]++; }
+				else { histogram[ color] = 0; }
+
+				if( i % ProgressUpdateFreq == 0)
+				{
+					if( EditorUtility.DisplayCancelableProgressBar( "Converting", 
+						"Calculating unique colors", 
+						(float)i / (float) data.Length))
+					{
+						EditorUtility.ClearProgressBar();
+						return null;
+					}
+				}
+			}
+
+			int count = histogram.Count;
+			UInt32[] colors = new UInt32[ count];
+			int[] hues = new int[ count];
+			int[] sats = new int[ count];
+			int[] vals = new int[ count];
+			i=0;
+			foreach( KeyValuePair<UInt32, UInt32> kv in histogram)
+			{
+				float h, s, v;
+				Color.RGBToHSV( Color32Util.FromRGBAUint32( kv.Key), 
+								out h, out s, out v);
+				
+				colors[ i] = kv.Key;
+				hues[ i] = (int)(h * 255.0f);
+				sats[ i] = (int)(s * 255.0f);
+				vals[ i] = (int)(v * 255.0f);
+				i++;
+			}
+
+			for( i=0; i<count; i++)
+			{
+				int hueDelta = 0;
+				int satDelta = 0;
+				int valDelta = 0;
+				color = colors[i];
+				int hue = hues[i];
+				int sat = sats[i];
+				int val = vals[i];
+				for( int j=0; j<count; j++)
+				{
+					hueDelta += Math.Abs( hues[j] - hue);
+					satDelta += Math.Abs( sats[j] - sat);
+					valDelta += Math.Abs( vals[j] - val);
+				}
+
+				histogram[ color] = (UInt32) (hueDelta + valDelta + satDelta);
+			}
+
+			return histogram;
+		}
+
+		private int ConvertHistogramToPaletteLUT( Dictionary<UInt32, UInt32> histogram, int maxColors)
+		{
+			List<KeyValuePair<UInt32, UInt32>> orderedHistogram = new List<KeyValuePair<UInt32, UInt32>>( histogram);
+			orderedHistogram.Sort( (a, b) => b.Value.CompareTo( a.Value));
+
+			int count = histogram.Count;
+			UInt32 color;
+
+			// Setup indices for most used colors
+			int clippedCount = Math.Min( count, maxColors);
+			for( int i=0; i<clippedCount; i++)
+			{
+				color = orderedHistogram[i].Key;
+				histogram[ color] = (UInt32)i;
+			}
+
+			// Setup indices for any clipped colors
+			for( int i=maxColors; i<count; i++)
+			{
+				UInt32 currentColor = orderedHistogram[i].Key;
+				// Find closest color
+				Int32 maxDelta = Int32.MaxValue;
+				int bestIndex = 0;
+				for( int j=0; j<maxColors; j++)
+				{
+					Int32 delta = CalcRGBDelta( currentColor, orderedHistogram[j].Value);
+					if( delta < maxDelta)
+					{
+						maxDelta = delta;
+						bestIndex = j;
+					}
+				}
+
+				color = orderedHistogram[i].Key;
+				histogram[ color] = (UInt32)bestIndex;
+			}
+
+			return clippedCount;
+		}
+
+		private int CalcRGBDelta( UInt32 a, UInt32 b)
+		{
+			int dr = Math.Abs( (int)((a >> 24) & 0xff) - (int)((b >> 24) & 0xff));
+			int dg = Math.Abs( (int)((a >> 16) & 0xff) - (int)((b >> 16) & 0xff));
+			int db = Math.Abs( (int)((a >> 8) & 0xff) - (int)((b >> 8) & 0xff));
+
+			return dr + dg + db;
 		}
 	}
 }
