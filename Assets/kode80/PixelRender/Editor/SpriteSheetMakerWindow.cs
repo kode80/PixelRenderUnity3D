@@ -16,6 +16,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections;
+using System.IO;
 using kode80.GUIWrapper;
 
 namespace kode80.PixelRender
@@ -38,7 +39,7 @@ namespace kode80.PixelRender
 		private GameObject _modelGameObject;
 		private float _lastFrameTime;
 
-		private float _test = 0.0f;
+		private int _frames = 12;
 
 		[MenuItem( "Window/kode80/PixelRender/Sprite Sheet Maker")]
 		public static void Init()
@@ -57,6 +58,8 @@ namespace kode80.PixelRender
 			_guiSide = _gui.Add( new GUIVertical( GUILayout.MaxWidth(290.0f))) as GUIVertical;
 			_guiSide.Add( new GUIObjectField<GameObject>( new GUIContent( "GameObject", "GameObject to render as sprite sheet"),
 														  true, GameObjectChanged));
+			_guiSide.Add( new GUIButton( new GUIContent( "Rotate"), RotateModel));
+			_guiSide.Add( new GUIButton( new GUIContent( "Render"), RenderModel));
 
 			_guiPreview = _gui.Add( new GUIVertical( GUILayout.ExpandWidth( true), GUILayout.ExpandHeight( true))) as GUIVertical;
 			_guiPreview.shouldStoreLastRect = true;
@@ -123,11 +126,61 @@ namespace kode80.PixelRender
 			_modelGameObject.transform.parent = _rootGameObject.transform;
 			_modelGameObject.transform.localPosition = Vector3.zero;
 
+			ScaleModelToFitCamera();
+
 			RenderPreview();
-			//Repaint();
+		}
+
+		private void RotateModel( GUIBase sender)
+		{
+			if( _rootGameObject == null) { return; }
+
+			_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / _frames, 0.0f);
+			RenderPreview();
+		}
+
+		private void RenderModel( GUIBase sender)
+		{
+			int sheetWidth = _previewCamera.pixelWidth * _frames;
+			int sheetHeight = _previewCamera.pixelHeight;
+			RenderTexture sheet = new RenderTexture( sheetWidth, sheetHeight, 0);
+			Rect rect = new Rect( Vector2.zero, new Vector2( _previewCamera.pixelWidth, _previewCamera.pixelHeight));
+			Vector2 step = new Vector2( _previewCamera.pixelWidth, 0.0f);
+			for( int i=0; i<_frames; i++)
+			{
+				RenderPreview();
+				RenderTexture.active = sheet;
+				GL.PushMatrix();
+				GL.LoadPixelMatrix( 0, sheet.width, sheet.height, 0);
+				Graphics.DrawTexture( rect, _previewTexture);
+				GL.PopMatrix();
+				RenderTexture.active = null;
+
+				rect.position += step;
+				_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / _frames, 0.0f);
+				EditorUtility.DisplayProgressBar( "Rendering", "Rendering frames", (float)i / (float)_frames);
+			}
+			int asd = 0;
+			RenderTexture.active = sheet;
+			Texture2D sheetTexture = new Texture2D( sheet.width, sheet.height);
+			sheetTexture.ReadPixels( new Rect( Vector2.zero, new Vector2( sheet.width, sheet.height)), 0, 0);
+			RenderTexture.active = null;
+
+			SaveTexture( sheetTexture, "Assets/TestSheet.png");
+			AssetDatabase.Refresh();
+
+			EditorUtility.ClearProgressBar();
 		}
 
 		#endregion
+
+		private void SaveTexture( Texture2D texture, string assetPath)
+		{
+			string dataPath = Application.dataPath.Substring( 0, Application.dataPath.Length - "/Assets".Length);
+			string path = Path.Combine( dataPath, assetPath);
+
+			File.WriteAllBytes( path, texture.EncodeToPNG());
+		}
 
 		private void InitPreviewRenderTexture()
 		{
@@ -212,7 +265,7 @@ namespace kode80.PixelRender
 
 			if( clip &&
 				(input.x < container.x || input.y < container.y ||
-				 input.right > container.right || input.bottom > container.bottom))
+					input.xMax > container.xMax || input.yMax > container.yMax))
 			{
 				input.x = Mathf.Max( input.x, container.x);
 				input.y = Mathf.Max( input.y, container.y);
@@ -221,6 +274,50 @@ namespace kode80.PixelRender
 			}
 
 			return input;
+		}
+
+		private void ScaleModelToFitCamera()
+		{
+			if( _modelGameObject == null || _previewCamera == null) { return; }
+
+			Bounds bounds = GetBounds( _modelGameObject);
+			float maxDimension = Mathf.Max( bounds.extents.x, Mathf.Max( bounds.extents.y, bounds.extents.z)) * 2.0f;
+			maxDimension += maxDimension * 0.5f;
+
+			float distance = Mathf.Abs( _previewCamera.transform.position.z);
+			Vector3 bottomLeft = _previewCamera.ViewportToWorldPoint( new Vector3( 0, 0, distance));
+			Vector3 topRight = _previewCamera.ViewportToWorldPoint( new Vector3( 1, 1, distance));
+			Vector3 delta = topRight - bottomLeft;
+			float minViewDimension = Mathf.Min( Mathf.Abs( delta.x), Mathf.Abs( delta.y));
+			float scale = minViewDimension / maxDimension;
+
+			Debug.Log( "Bounds: " + bounds.center.ToString( "G"));
+			_modelGameObject.transform.localScale = new Vector3( scale, scale, scale);
+
+			Vector3 center = bounds.center * -1.0f;
+			_modelGameObject.transform.position = _modelGameObject.transform.TransformPoint( center);
+		}
+
+		private Bounds GetBounds( GameObject gameObject)
+		{
+			Bounds bounds = new Bounds();
+			MeshFilter[] filters = gameObject.GetComponentsInChildren<MeshFilter>( false);
+
+			bool isFirst = true;
+			foreach( MeshFilter filter in filters)
+			{
+				if( isFirst) 
+				{
+					bounds = filter.sharedMesh.bounds;
+					isFirst = false;
+				}
+				else
+				{
+					bounds.Encapsulate( filter.sharedMesh.bounds);
+				}
+			}
+
+			return bounds;
 		}
 
 		private void RenderPreview()
