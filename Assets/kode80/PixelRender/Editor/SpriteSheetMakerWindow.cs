@@ -146,6 +146,13 @@ namespace kode80.PixelRender
 			RenderTexture sheet = new RenderTexture( sheetWidth, sheetHeight, 0);
 			Rect rect = new Rect( Vector2.zero, new Vector2( _previewCamera.pixelWidth, _previewCamera.pixelHeight));
 			Vector2 step = new Vector2( _previewCamera.pixelWidth, 0.0f);
+			Color oldBackground = _previewCamera.backgroundColor;
+			_previewCamera.backgroundColor = Color.clear;
+
+			RenderTexture.active = sheet;
+			GL.Clear( true, true, Color.clear);
+			RenderTexture.active = null;
+
 			for( int i=0; i<_frames; i++)
 			{
 				RenderPreview();
@@ -160,7 +167,7 @@ namespace kode80.PixelRender
 				_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / _frames, 0.0f);
 				EditorUtility.DisplayProgressBar( "Rendering", "Rendering frames", (float)i / (float)_frames);
 			}
-			int asd = 0;
+			_previewCamera.backgroundColor = oldBackground;
 			RenderTexture.active = sheet;
 			Texture2D sheetTexture = new Texture2D( sheet.width, sheet.height);
 			sheetTexture.ReadPixels( new Rect( Vector2.zero, new Vector2( sheet.width, sheet.height)), 0, 0);
@@ -170,6 +177,9 @@ namespace kode80.PixelRender
 			AssetDatabase.Refresh();
 
 			EditorUtility.ClearProgressBar();
+
+			// Needed to display original background color
+			RenderPreview();
 		}
 
 		#endregion
