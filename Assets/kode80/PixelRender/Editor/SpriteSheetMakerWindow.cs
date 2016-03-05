@@ -173,8 +173,10 @@ namespace kode80.PixelRender
 			sheetTexture.ReadPixels( new Rect( Vector2.zero, new Vector2( sheet.width, sheet.height)), 0, 0);
 			RenderTexture.active = null;
 
-			SaveTexture( sheetTexture, "Assets/TestSheet.png");
+			string path = "Assets/TestSheet.png";
+			SaveTexture( sheetTexture, path);
 			AssetDatabase.Refresh();
+			UpdateSpriteImportSettings( path);
 
 			EditorUtility.ClearProgressBar();
 
@@ -190,6 +192,24 @@ namespace kode80.PixelRender
 			string path = Path.Combine( dataPath, assetPath);
 
 			File.WriteAllBytes( path, texture.EncodeToPNG());
+		}
+
+		private void UpdateSpriteImportSettings( string path)
+		{
+			SpriteMetaData[] spriteData = new SpriteMetaData[ _frames];
+			for( int i=0; i<_frames; i++)
+			{
+				spriteData[i].rect = new Rect( i * _previewTexture.width, 0, _previewTexture.width, _previewTexture.height);
+			}
+
+			TextureImporter importer = AssetImporter.GetAtPath( path) as TextureImporter;
+			importer.textureType = TextureImporterType.Sprite;
+			importer.spriteImportMode = SpriteImportMode.Multiple;
+			importer.spritesheet = spriteData;
+			importer.textureFormat = TextureImporterFormat.AutomaticTruecolor;
+			importer.filterMode = FilterMode.Point;
+			importer.SaveAndReimport();
+			AssetDatabase.ImportAsset( path);
 		}
 
 		private void InitPreviewRenderTexture()
