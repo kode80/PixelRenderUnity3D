@@ -31,6 +31,8 @@ namespace kode80.PixelRender
 		private GUIHorizontal _gui;
 		private GUIVertical _guiSide;
 		private GUIIntSlider _guiFrameCount;
+		private GUIIntSlider _guiFrameWidth;
+		private GUIIntSlider _guiFrameHeight;
 		private GUIVertical _guiPreview;
 
 		private RenderTexture _previewTexture;
@@ -59,6 +61,10 @@ namespace kode80.PixelRender
 														  true, GameObjectChanged));
 			_guiFrameCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Count", "Number of frames in the sprite sheet"),
 				12, 1, 32)) as GUIIntSlider;
+			_guiFrameWidth = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Width", "Width of each frame in the sprite sheet"),
+				100, 32, 512, ResizeFrame)) as GUIIntSlider;
+			_guiFrameHeight = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Height", "Height of each frame in the sprite sheet"),
+				100, 32, 512, ResizeFrame)) as GUIIntSlider;
 			_guiSide.Add( new GUIButton( new GUIContent( "Rotate"), RotateModel));
 			_guiSide.Add( new GUIButton( new GUIContent( "Render"), RenderModel));
 
@@ -133,6 +139,17 @@ namespace kode80.PixelRender
 
 			ScaleModelToFitCamera();
 
+			RenderPreview();
+		}
+
+		private void ResizeFrame( GUIBase sender)
+		{
+			if( _previewTexture == null || _previewCamera == null) { return; }
+
+			InitPreviewRenderTexture();
+			_previewCamera.targetTexture = _previewTexture;
+
+			ScaleModelToFitCamera();
 			RenderPreview();
 		}
 
@@ -222,7 +239,7 @@ namespace kode80.PixelRender
 
 		private void InitPreviewRenderTexture()
 		{
-			_previewTexture = new RenderTexture( 100, 100, 0);
+			_previewTexture = new RenderTexture( _guiFrameWidth.value, _guiFrameHeight.value, 0);
 			_previewTexture.filterMode = FilterMode.Point;
 			_previewTexture.hideFlags = HideFlags.HideAndDontSave;
 		}
