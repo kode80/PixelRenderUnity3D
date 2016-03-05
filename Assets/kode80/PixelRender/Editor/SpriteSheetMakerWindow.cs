@@ -119,12 +119,16 @@ namespace kode80.PixelRender
 			}
 
 			_modelGameObject = GameObject.Instantiate( gameObjectField.value);
-			Debug.Log( "GameObject assigned: " + _modelGameObject.GetType());
 			_modelGameObject.name = _ModelName;
-			_modelGameObject.hideFlags = HideFlags.HideAndDontSave;
-			_modelGameObject.layer = _PreviewLayer;
 			_modelGameObject.transform.parent = _rootGameObject.transform;
 			_modelGameObject.transform.localPosition = Vector3.zero;
+
+			Transform[] children = _modelGameObject.GetComponentsInChildren<Transform>(true);
+			foreach( Transform child in children)
+			{
+				child.gameObject.hideFlags = HideFlags.HideAndDontSave;
+				child.gameObject.layer = _PreviewLayer;
+			}
 
 			ScaleModelToFitCamera();
 
@@ -321,30 +325,22 @@ namespace kode80.PixelRender
 			float minViewDimension = Mathf.Min( Mathf.Abs( delta.x), Mathf.Abs( delta.y));
 			float scale = minViewDimension / maxDimension;
 
-			Debug.Log( "Bounds: " + bounds.center.ToString( "G"));
 			_modelGameObject.transform.localScale = new Vector3( scale, scale, scale);
-
-			Vector3 center = bounds.center * -1.0f;
-			_modelGameObject.transform.position = _modelGameObject.transform.TransformPoint( center);
+			Vector3 center = bounds.center * -scale;
+			_modelGameObject.transform.position = center;
 		}
 
 		private Bounds GetBounds( GameObject gameObject)
 		{
-			Bounds bounds = new Bounds();
-			MeshFilter[] filters = gameObject.GetComponentsInChildren<MeshFilter>( false);
+			gameObject.transform.localScale = Vector3.one;
+			gameObject.transform.position = Vector3.zero;
 
-			bool isFirst = true;
-			foreach( MeshFilter filter in filters)
+			Bounds bounds = new Bounds();
+			Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>( false);
+
+			foreach( Renderer renderer in renderers)
 			{
-				if( isFirst) 
-				{
-					bounds = filter.sharedMesh.bounds;
-					isFirst = false;
-				}
-				else
-				{
-					bounds.Encapsulate( filter.sharedMesh.bounds);
-				}
+				bounds.Encapsulate( renderer.bounds);
 			}
 
 			return bounds;
