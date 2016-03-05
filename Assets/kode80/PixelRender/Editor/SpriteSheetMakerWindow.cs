@@ -164,11 +164,8 @@ namespace kode80.PixelRender
 		private void RenderModel( GUIBase sender)
 		{
 			int frameCount = _guiFrameCount.value;
-			int sheetWidth = _previewCamera.pixelWidth * frameCount;
-			int sheetHeight = _previewCamera.pixelHeight;
-			RenderTexture sheet = new RenderTexture( sheetWidth, sheetHeight, 0);
-			Rect rect = new Rect( Vector2.zero, new Vector2( _previewCamera.pixelWidth, _previewCamera.pixelHeight));
-			Vector2 step = new Vector2( _previewCamera.pixelWidth, 0.0f);
+			Vector2 sheetDimensions = GetSheetDimensions();
+			RenderTexture sheet = new RenderTexture( (int)sheetDimensions.x, (int)sheetDimensions.y, 0);
 			Color oldBackground = _previewCamera.backgroundColor;
 			_previewCamera.backgroundColor = Color.clear;
 
@@ -182,11 +179,10 @@ namespace kode80.PixelRender
 				RenderTexture.active = sheet;
 				GL.PushMatrix();
 				GL.LoadPixelMatrix( 0, sheet.width, sheet.height, 0);
-				Graphics.DrawTexture( rect, _previewTexture);
+				Graphics.DrawTexture( GetFrameRect( i), _previewTexture);
 				GL.PopMatrix();
 				RenderTexture.active = null;
 
-				rect.position += step;
 				_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / frameCount, 0.0f);
 				EditorUtility.DisplayProgressBar( "Rendering", "Rendering frames", (float)i / (float)frameCount);
 			}
@@ -224,7 +220,7 @@ namespace kode80.PixelRender
 			for( int i=0; i<frameCount; i++)
 			{
 				spriteData[i].name = "Sprite_ " + i;
-				spriteData[i].rect = new Rect( i * _previewTexture.width, 0, _previewTexture.width, _previewTexture.height);
+				spriteData[i].rect = GetFrameRect( i, true);
 			}
 
 			TextureImporter importer = AssetImporter.GetAtPath( path) as TextureImporter;
@@ -365,6 +361,32 @@ namespace kode80.PixelRender
 			}
 
 			return bounds;
+		}
+
+		private int GetFramesPerRow()
+		{
+			return (int) Mathf.Ceil( Mathf.Sqrt( _guiFrameCount.value));
+		}
+
+		private Vector2 GetSheetDimensions()
+		{
+			int framesPerRow = GetFramesPerRow();
+			int framesPerColumn = (int) Mathf.Ceil( (float)_guiFrameCount.value / (float)framesPerRow);
+			return new Vector2( framesPerRow * _previewTexture.width, framesPerColumn * _previewTexture.height);
+		}
+
+		private Rect GetFrameRect( int frameIndex, bool bottomToTop=false)
+		{
+			Vector2 sheetDimensions = GetSheetDimensions();
+			int framesPerRow = GetFramesPerRow();
+			int w = _previewTexture.width;
+			int h = _previewTexture.height;
+			int x = (frameIndex % framesPerRow) * w;
+			int y = (frameIndex / framesPerRow) * h;
+
+			if( bottomToTop) { y = (int)sheetDimensions.y - y - h; }
+
+			return new Rect( x, y, w, h);
 		}
 
 		private void RenderPreview()
