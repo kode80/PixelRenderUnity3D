@@ -30,6 +30,7 @@ namespace kode80.PixelRender
 
 		private GUIHorizontal _gui;
 		private GUIVertical _guiSide;
+		private GUIIntSlider _guiFrameCount;
 		private GUIVertical _guiPreview;
 
 		private RenderTexture _previewTexture;
@@ -38,8 +39,6 @@ namespace kode80.PixelRender
 		private GameObject _rootGameObject;
 		private GameObject _modelGameObject;
 		private float _lastFrameTime;
-
-		private int _frames = 12;
 
 		[MenuItem( "Window/kode80/PixelRender/Sprite Sheet Maker")]
 		public static void Init()
@@ -58,6 +57,8 @@ namespace kode80.PixelRender
 			_guiSide = _gui.Add( new GUIVertical( GUILayout.MaxWidth(290.0f))) as GUIVertical;
 			_guiSide.Add( new GUIObjectField<GameObject>( new GUIContent( "GameObject", "GameObject to render as sprite sheet"),
 														  true, GameObjectChanged));
+			_guiFrameCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Count", "Number of frames in the sprite sheet"),
+				12, 1, 32)) as GUIIntSlider;
 			_guiSide.Add( new GUIButton( new GUIContent( "Rotate"), RotateModel));
 			_guiSide.Add( new GUIButton( new GUIContent( "Render"), RenderModel));
 
@@ -139,13 +140,14 @@ namespace kode80.PixelRender
 		{
 			if( _rootGameObject == null) { return; }
 
-			_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / _frames, 0.0f);
+			_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / _guiFrameCount.value, 0.0f);
 			RenderPreview();
 		}
 
 		private void RenderModel( GUIBase sender)
 		{
-			int sheetWidth = _previewCamera.pixelWidth * _frames;
+			int frameCount = _guiFrameCount.value;
+			int sheetWidth = _previewCamera.pixelWidth * frameCount;
 			int sheetHeight = _previewCamera.pixelHeight;
 			RenderTexture sheet = new RenderTexture( sheetWidth, sheetHeight, 0);
 			Rect rect = new Rect( Vector2.zero, new Vector2( _previewCamera.pixelWidth, _previewCamera.pixelHeight));
@@ -157,7 +159,7 @@ namespace kode80.PixelRender
 			GL.Clear( true, true, Color.clear);
 			RenderTexture.active = null;
 
-			for( int i=0; i<_frames; i++)
+			for( int i=0; i<frameCount; i++)
 			{
 				RenderPreview();
 				RenderTexture.active = sheet;
@@ -168,8 +170,8 @@ namespace kode80.PixelRender
 				RenderTexture.active = null;
 
 				rect.position += step;
-				_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / _frames, 0.0f);
-				EditorUtility.DisplayProgressBar( "Rendering", "Rendering frames", (float)i / (float)_frames);
+				_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / frameCount, 0.0f);
+				EditorUtility.DisplayProgressBar( "Rendering", "Rendering frames", (float)i / (float)frameCount);
 			}
 			_previewCamera.backgroundColor = oldBackground;
 			RenderTexture.active = sheet;
@@ -200,9 +202,11 @@ namespace kode80.PixelRender
 
 		private void UpdateSpriteImportSettings( string path)
 		{
-			SpriteMetaData[] spriteData = new SpriteMetaData[ _frames];
-			for( int i=0; i<_frames; i++)
+			int frameCount = _guiFrameCount.value;
+			SpriteMetaData[] spriteData = new SpriteMetaData[ frameCount];
+			for( int i=0; i<frameCount; i++)
 			{
+				spriteData[i].name = "Sprite_ " + i;
 				spriteData[i].rect = new Rect( i * _previewTexture.width, 0, _previewTexture.width, _previewTexture.height);
 			}
 
