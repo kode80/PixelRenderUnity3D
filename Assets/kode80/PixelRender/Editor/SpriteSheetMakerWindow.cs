@@ -39,6 +39,8 @@ namespace kode80.PixelRender
 		private GUISlider _guiScaleOffset;
 		private GUIVector3Field _guiStartRotation;
 		private GUIVector3Field _guiEndRotation;
+		private GUIIntSlider _guiLoopCount;
+		private GUIToggle _guiPingPong;
 		private GUIVertical _guiPreview;
 
 		private RenderTexture _previewTexture;
@@ -83,6 +85,8 @@ namespace kode80.PixelRender
 			_guiSide.Add( new GUISpace());
 			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RotationChanged)) as GUIVector3Field;
 			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RotationChanged)) as GUIVector3Field;
+			_guiLoopCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Loop Count"), 1, 1, 10, RotationChanged)) as GUIIntSlider;
+			_guiPingPong = _guiSide.Add( new GUIToggle( new GUIContent( "Pingpong"), RotationChanged)) as GUIToggle;
 
 			_guiSide.Add( new GUISpace());
 			GUIColorField outlineColor = _guiSide.Add( new GUIColorField( new GUIContent( "Outline Color"), 
@@ -439,6 +443,15 @@ namespace kode80.PixelRender
 			Quaternion a = Quaternion.Euler( _guiStartRotation.vector);
 			Quaternion b = Quaternion.Euler( _guiEndRotation.vector);
 			float t = (float)frame / (float)(_guiFrameCount.value - 1);
+
+			float loopedT = t * (float)_guiLoopCount.value;
+			t = loopedT - Mathf.Floor( loopedT);
+
+			if( _guiPingPong.isToggled && ((int)loopedT % 2) == 1)
+			{
+				t = 1.0f - t;
+			}
+
 			_rootGameObject.transform.localRotation = Quaternion.Lerp( a, b, t);
 
 			Animator animator = _modelGameObject.GetComponentInChildren<Animator>( true);
