@@ -250,7 +250,7 @@ namespace kode80.PixelRender
 
 			string path = "Assets/TestSheet.png";
 			SaveTexture( sheetTexture, path);
-			AssetDatabase.Refresh();
+			AssetDatabase.Refresh( ImportAssetOptions.ForceUpdate);
 			UpdateSpriteImportSettings( path);
 
 			EditorUtility.ClearProgressBar();
