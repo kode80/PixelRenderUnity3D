@@ -71,7 +71,7 @@ namespace kode80.PixelRender
 			_guiSide.Add( new GUIObjectField<GameObject>( new GUIContent( "GameObject", "GameObject to render as sprite sheet"),
 														  true, GameObjectChanged));
 			_guiFrameCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Count", "Number of frames in the sprite sheet"),
-				12, 1, 32, FrameCountChanged)) as GUIIntSlider;
+				12, 1, 64, FrameCountChanged)) as GUIIntSlider;
 			_guiFrameWidth = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Width", "Width of each frame in the sprite sheet"),
 				100, 32, 512, ResizeFrame)) as GUIIntSlider;
 			_guiFrameHeight = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Height", "Height of each frame in the sprite sheet"),
