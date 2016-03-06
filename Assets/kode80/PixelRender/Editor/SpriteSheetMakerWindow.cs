@@ -440,8 +440,6 @@ namespace kode80.PixelRender
 
 		private void SetupFrame( int frame)
 		{
-			Quaternion a = Quaternion.Euler( _guiStartRotation.vector);
-			Quaternion b = Quaternion.Euler( _guiEndRotation.vector);
 			float t = (float)frame / (float)(_guiFrameCount.value - 1);
 
 			float loopedT = t * (float)_guiLoopCount.value;
@@ -452,7 +450,7 @@ namespace kode80.PixelRender
 				t = 1.0f - t;
 			}
 
-			_rootGameObject.transform.localRotation = Quaternion.Lerp( a, b, t);
+			_rootGameObject.transform.localEulerAngles = Vector3.Lerp( _guiStartRotation.vector, _guiEndRotation.vector, t);
 
 			Animator animator = _modelGameObject.GetComponentInChildren<Animator>( true);
 			if( animator != null && animator.runtimeAnimatorController != null)
