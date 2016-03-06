@@ -15,6 +15,7 @@
 
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Collections;
 using System.IO;
 using kode80.GUIWrapper;
@@ -33,6 +34,9 @@ namespace kode80.PixelRender
 		private GUIIntSlider _guiFrameCount;
 		private GUIIntSlider _guiFrameWidth;
 		private GUIIntSlider _guiFrameHeight;
+		private GUIIntSlider _guiCurrentFrame;
+		private GUIVector3Field _guiStartRotation;
+		private GUIVector3Field _guiEndRotation;
 		private GUIVertical _guiPreview;
 
 		private RenderTexture _previewTexture;
@@ -60,18 +64,27 @@ namespace kode80.PixelRender
 			_guiSide.Add( new GUIObjectField<GameObject>( new GUIContent( "GameObject", "GameObject to render as sprite sheet"),
 														  true, GameObjectChanged));
 			_guiFrameCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Count", "Number of frames in the sprite sheet"),
-				12, 1, 32)) as GUIIntSlider;
+				12, 1, 32, FrameCountChanged)) as GUIIntSlider;
 			_guiFrameWidth = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Width", "Width of each frame in the sprite sheet"),
 				100, 32, 512, ResizeFrame)) as GUIIntSlider;
 			_guiFrameHeight = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Height", "Height of each frame in the sprite sheet"),
 				100, 32, 512, ResizeFrame)) as GUIIntSlider;
+
+			_guiSide.Add( new GUISpace());
+			_guiCurrentFrame = _guiSide.Add( new GUIIntSlider( new GUIContent( "Current Frame"), 
+				0, 0, _guiFrameCount.value-1, CurrentFrameChanged)) as GUIIntSlider;
+
+			_guiSide.Add( new GUISpace());
+			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RotationChanged)) as GUIVector3Field;
+			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RotationChanged)) as GUIVector3Field;
+
 			_guiSide.Add( new GUISpace());
 			GUIColorField outlineColor = _guiSide.Add( new GUIColorField( new GUIContent( "Outline Color"), 
 				OutlineColorChanged)) as GUIColorField;
 			GUISlider outlineThreshold = _guiSide.Add( new GUISlider( new GUIContent( "Outline Threshold"), 
 				0.05f, 0.0f, 0.05f, OutlineThresholdChanged)) as GUISlider;
+
 			_guiSide.Add( new GUISpace());
-			_guiSide.Add( new GUIButton( new GUIContent( "Rotate"), RotateModel));
 			_guiSide.Add( new GUIButton( new GUIContent( "Render"), RenderModel));
 
 			_guiPreview = _gui.Add( new GUIVertical( GUILayout.ExpandWidth( true), GUILayout.ExpandHeight( true))) as GUIVertical;
@@ -82,6 +95,8 @@ namespace kode80.PixelRender
 			InitRootGameObject();
 			RenderPreview();
 
+			_guiStartRotation.vector = Vector3.zero;
+			_guiEndRotation.vector = new Vector3( 0.0f, 180.0f, 0.0f);
 			outlineColor.color = _previewOutline.outlineColor;
 			outlineThreshold.value = _previewOutline.depthThreshold;
 		}
@@ -161,6 +176,24 @@ namespace kode80.PixelRender
 			RenderPreview();
 		}
 
+		private void FrameCountChanged( GUIBase sender)
+		{
+			_guiCurrentFrame.maxValue = _guiFrameCount.value - 1;
+			_guiCurrentFrame.value = Math.Min( _guiFrameCount.value, _guiCurrentFrame.value);
+		}
+
+		private void CurrentFrameChanged( GUIBase sender)
+		{
+			SetupFrame( _guiCurrentFrame.value);
+			RenderPreview();
+		}
+
+		private void RotationChanged( GUIBase sender)
+		{
+			SetupFrame( _guiCurrentFrame.value);
+			RenderPreview();
+		}
+
 		private void OutlineColorChanged( GUIBase sender)
 		{
 			GUIColorField color = sender as GUIColorField;
@@ -172,14 +205,6 @@ namespace kode80.PixelRender
 		{
 			GUISlider threshold = sender as GUISlider;
 			_previewOutline.depthThreshold = threshold.value;
-			RenderPreview();
-		}
-
-		private void RotateModel( GUIBase sender)
-		{
-			if( _rootGameObject == null) { return; }
-
-			_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / _guiFrameCount.value, 0.0f);
 			RenderPreview();
 		}
 
@@ -197,6 +222,7 @@ namespace kode80.PixelRender
 
 			for( int i=0; i<frameCount; i++)
 			{
+				SetupFrame( i);
 				RenderPreview();
 				RenderTexture.active = sheet;
 				GL.PushMatrix();
@@ -205,7 +231,6 @@ namespace kode80.PixelRender
 				GL.PopMatrix();
 				RenderTexture.active = null;
 
-				_rootGameObject.transform.localEulerAngles += new Vector3( 0.0f, 360.0f / frameCount, 0.0f);
 				EditorUtility.DisplayProgressBar( "Rendering", "Rendering frames", (float)i / (float)frameCount);
 			}
 			_previewCamera.backgroundColor = oldBackground;
@@ -397,6 +422,14 @@ namespace kode80.PixelRender
 			int framesPerRow = GetFramesPerRow();
 			int framesPerColumn = (int) Mathf.Ceil( (float)_guiFrameCount.value / (float)framesPerRow);
 			return new Vector2( framesPerRow * _previewTexture.width, framesPerColumn * _previewTexture.height);
+		}
+
+		private void SetupFrame( int frame)
+		{
+			Quaternion a = Quaternion.Euler( _guiStartRotation.vector);
+			Quaternion b = Quaternion.Euler( _guiEndRotation.vector);
+			float t = (float)frame / (float)(_guiFrameCount.value - 1);
+			_rootGameObject.transform.localRotation = Quaternion.Lerp( a, b, t);
 		}
 
 		private Rect GetFrameRect( int frameIndex, bool bottomToTop=false)
