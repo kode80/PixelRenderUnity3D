@@ -65,6 +65,12 @@ namespace kode80.PixelRender
 				100, 32, 512, ResizeFrame)) as GUIIntSlider;
 			_guiFrameHeight = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Height", "Height of each frame in the sprite sheet"),
 				100, 32, 512, ResizeFrame)) as GUIIntSlider;
+			_guiSide.Add( new GUISpace());
+			GUIColorField outlineColor = _guiSide.Add( new GUIColorField( new GUIContent( "Outline Color"), 
+				OutlineColorChanged)) as GUIColorField;
+			GUISlider outlineThreshold = _guiSide.Add( new GUISlider( new GUIContent( "Outline Threshold"), 
+				0.05f, 0.0f, 0.05f, OutlineThresholdChanged)) as GUISlider;
+			_guiSide.Add( new GUISpace());
 			_guiSide.Add( new GUIButton( new GUIContent( "Rotate"), RotateModel));
 			_guiSide.Add( new GUIButton( new GUIContent( "Render"), RenderModel));
 
@@ -74,8 +80,10 @@ namespace kode80.PixelRender
 			InitPreviewRenderTexture();
 			InitPreviewCamera();
 			InitRootGameObject();
-
 			RenderPreview();
+
+			outlineColor.color = _previewOutline.outlineColor;
+			outlineThreshold.value = _previewOutline.depthThreshold;
 		}
 
 		void OnDisable()
@@ -150,6 +158,20 @@ namespace kode80.PixelRender
 			_previewCamera.targetTexture = _previewTexture;
 
 			ScaleModelToFitCamera();
+			RenderPreview();
+		}
+
+		private void OutlineColorChanged( GUIBase sender)
+		{
+			GUIColorField color = sender as GUIColorField;
+			_previewOutline.outlineColor = color.color;
+			RenderPreview();
+		}
+
+		private void OutlineThresholdChanged( GUIBase sender)
+		{
+			GUISlider threshold = sender as GUISlider;
+			_previewOutline.depthThreshold = threshold.value;
 			RenderPreview();
 		}
 
@@ -251,6 +273,8 @@ namespace kode80.PixelRender
 																		typeof(Camera), 
 																		typeof( PixelOutlineEffect));
 			}
+
+			cameraGO.hideFlags = HideFlags.HideAndDontSave;
 
 			_previewCamera = cameraGO.GetComponent<Camera>();
 			_previewOutline = cameraGO.GetComponent<PixelOutlineEffect>();
