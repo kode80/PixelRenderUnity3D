@@ -35,6 +35,8 @@ namespace kode80.PixelRender
 		private GUIIntSlider _guiFrameWidth;
 		private GUIIntSlider _guiFrameHeight;
 		private GUIIntSlider _guiCurrentFrame;
+		private GUIVector3Field _guiPositionOffset;
+		private GUISlider _guiScaleOffset;
 		private GUIVector3Field _guiStartRotation;
 		private GUIVector3Field _guiEndRotation;
 		private GUIVertical _guiPreview;
@@ -75,6 +77,10 @@ namespace kode80.PixelRender
 				0, 0, _guiFrameCount.value-1, CurrentFrameChanged)) as GUIIntSlider;
 
 			_guiSide.Add( new GUISpace());
+			_guiPositionOffset = _guiSide.Add( new GUIVector3Field( new GUIContent( "Position Offset"), OffsetChanged)) as GUIVector3Field;
+			_guiScaleOffset = _guiSide.Add( new GUISlider( new GUIContent( "Scale Offset"), 0.0f, -10.0f, 10.0f, OffsetChanged)) as GUISlider;
+
+			_guiSide.Add( new GUISpace());
 			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RotationChanged)) as GUIVector3Field;
 			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RotationChanged)) as GUIVector3Field;
 
@@ -93,7 +99,7 @@ namespace kode80.PixelRender
 			InitPreviewRenderTexture();
 			InitPreviewCamera();
 			InitRootGameObject();
-			RenderPreview();
+			RenderPreview( 0);
 
 			_guiStartRotation.vector = Vector3.zero;
 			_guiEndRotation.vector = new Vector3( 0.0f, 180.0f, 0.0f);
@@ -162,7 +168,7 @@ namespace kode80.PixelRender
 
 			ScaleModelToFitCamera();
 
-			RenderPreview();
+			RenderPreview( _guiCurrentFrame.value);
 		}
 
 		private void ResizeFrame( GUIBase sender)
@@ -173,7 +179,7 @@ namespace kode80.PixelRender
 			_previewCamera.targetTexture = _previewTexture;
 
 			ScaleModelToFitCamera();
-			RenderPreview();
+			RenderPreview( _guiCurrentFrame.value);
 		}
 
 		private void FrameCountChanged( GUIBase sender)
@@ -184,28 +190,32 @@ namespace kode80.PixelRender
 
 		private void CurrentFrameChanged( GUIBase sender)
 		{
-			SetupFrame( _guiCurrentFrame.value);
-			RenderPreview();
+			RenderPreview( _guiCurrentFrame.value);
+		}
+
+		private void OffsetChanged( GUIBase sender)
+		{
+			ScaleModelToFitCamera();
+			RenderPreview( _guiCurrentFrame.value);
 		}
 
 		private void RotationChanged( GUIBase sender)
 		{
-			SetupFrame( _guiCurrentFrame.value);
-			RenderPreview();
+			RenderPreview( _guiCurrentFrame.value);
 		}
 
 		private void OutlineColorChanged( GUIBase sender)
 		{
 			GUIColorField color = sender as GUIColorField;
 			_previewOutline.outlineColor = color.color;
-			RenderPreview();
+			RenderPreview( _guiCurrentFrame.value);
 		}
 
 		private void OutlineThresholdChanged( GUIBase sender)
 		{
 			GUISlider threshold = sender as GUISlider;
 			_previewOutline.depthThreshold = threshold.value;
-			RenderPreview();
+			RenderPreview( _guiCurrentFrame.value);
 		}
 
 		private void RenderModel( GUIBase sender)
@@ -222,8 +232,7 @@ namespace kode80.PixelRender
 
 			for( int i=0; i<frameCount; i++)
 			{
-				SetupFrame( i);
-				RenderPreview();
+				RenderPreview( i);
 				RenderTexture.active = sheet;
 				GL.PushMatrix();
 				GL.LoadPixelMatrix( 0, sheet.width, sheet.height, 0);
@@ -247,7 +256,7 @@ namespace kode80.PixelRender
 			EditorUtility.ClearProgressBar();
 
 			// Needed to display original background color
-			RenderPreview();
+			RenderPreview( _guiCurrentFrame.value);
 		}
 
 		#endregion
@@ -390,9 +399,10 @@ namespace kode80.PixelRender
 			Vector3 delta = topRight - bottomLeft;
 			float minViewDimension = Mathf.Min( Mathf.Abs( delta.x), Mathf.Abs( delta.y));
 			float scale = minViewDimension / maxDimension;
+			scale += _guiScaleOffset.value;
 
 			_modelGameObject.transform.localScale = new Vector3( scale, scale, scale);
-			Vector3 center = bounds.center * -scale;
+			Vector3 center = (bounds.center + _guiPositionOffset.vector) * -scale;
 			_modelGameObject.transform.position = center;
 		}
 
@@ -430,6 +440,16 @@ namespace kode80.PixelRender
 			Quaternion b = Quaternion.Euler( _guiEndRotation.vector);
 			float t = (float)frame / (float)(_guiFrameCount.value - 1);
 			_rootGameObject.transform.localRotation = Quaternion.Lerp( a, b, t);
+
+			Animator animator = _modelGameObject.GetComponentInChildren<Animator>( true);
+			if( animator != null && animator.runtimeAnimatorController != null)
+			{
+				AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+
+				AnimationMode.BeginSampling();
+				AnimationMode.SampleAnimationClip( _modelGameObject, clips[0], t * clips[0].length);
+				AnimationMode.EndSampling();
+			}
 		}
 
 		private Rect GetFrameRect( int frameIndex, bool bottomToTop=false)
@@ -446,14 +466,16 @@ namespace kode80.PixelRender
 			return new Rect( x, y, w, h);
 		}
 
-		private void RenderPreview()
+		private void RenderPreview( int frame)
 		{
 			string type = _modelGameObject == null ? "null" : _modelGameObject.GetType().ToString();
-			Debug.Log( "RenderPreview: " + type);
 			if( _modelGameObject != null)
 			{
 				_modelGameObject.SetActive( true);
+				AnimationMode.StartAnimationMode();
+				SetupFrame( frame);
 				_previewCamera.Render();
+				AnimationMode.StopAnimationMode();
 				_modelGameObject.SetActive( false);
 			}
 		}
