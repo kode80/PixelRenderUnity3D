@@ -37,6 +37,7 @@ namespace kode80.PixelRender
 		private GUIIntSlider _guiCurrentFrame;
 		private GUIVector3Field _guiPositionOffset;
 		private GUISlider _guiScaleOffset;
+		private GUIPopup _guiAnimationClips;
 		private GUIVector3Field _guiStartRotation;
 		private GUIVector3Field _guiEndRotation;
 		private GUIIntSlider _guiLoopCount;
@@ -64,7 +65,6 @@ namespace kode80.PixelRender
 
 			_gui = new GUIHorizontal();
 
-
 			GUIVertical sideContainer = _gui.Add( new GUIVertical( GUILayout.MaxWidth(290.0f))) as GUIVertical;
 			_guiSide = sideContainer.Add( new GUIScrollView()) as GUIScrollView;
 
@@ -86,6 +86,7 @@ namespace kode80.PixelRender
 			_guiScaleOffset = _guiSide.Add( new GUISlider( new GUIContent( "Scale Offset"), 0.0f, -10.0f, 10.0f, OffsetChanged)) as GUISlider;
 
 			_guiSide.Add( new GUISpace());
+			_guiAnimationClips = _guiSide.Add( new GUIPopup( new GUIContent( "Animation Clips"), null, 0, AnimationClipChanged)) as GUIPopup;
 			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RotationChanged)) as GUIVector3Field;
 			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RotationChanged)) as GUIVector3Field;
 			_guiLoopCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Loop Count"), 1, 1, 10, RotationChanged)) as GUIIntSlider;
@@ -173,6 +174,7 @@ namespace kode80.PixelRender
 				child.gameObject.layer = _PreviewLayer;
 			}
 
+			UpdateAnimationClipsPopup();
 			ScaleModelToFitCamera();
 
 			RenderPreview( _guiCurrentFrame.value);
@@ -203,6 +205,11 @@ namespace kode80.PixelRender
 		private void OffsetChanged( GUIBase sender)
 		{
 			ScaleModelToFitCamera();
+			RenderPreview( _guiCurrentFrame.value);
+		}
+
+		private void AnimationClipChanged( GUIBase sender)
+		{
 			RenderPreview( _guiCurrentFrame.value);
 		}
 
@@ -370,6 +377,30 @@ namespace kode80.PixelRender
 			_modelGameObject.SetActive( false);
 		}
 
+		private void UpdateAnimationClipsPopup()
+		{
+			Animator animator = _modelGameObject.GetComponentInChildren<Animator>( true);
+			GUIContent[] options = null;
+
+			if( animator != null && 
+				animator.runtimeAnimatorController != null &&
+				animator.runtimeAnimatorController.animationClips != null &&
+				animator.runtimeAnimatorController.animationClips.Length > 0)
+			{
+				AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+				int count = clips.Length;
+				options = new GUIContent[ count];
+
+				for( int i=0; i<count; i++)
+				{
+					options[i] = new GUIContent( clips[i].name);
+				}
+			}
+
+			_guiAnimationClips.displayedOptions = options;
+			_guiAnimationClips.isEnabled = options != null;
+		}
+
 		private Rect SizeRectToFit( Rect input, Rect container, bool clip=true)
 		{
 			float scale = Mathf.Min( container.width/input.width, container.height/input.height);
@@ -456,12 +487,15 @@ namespace kode80.PixelRender
 			_rootGameObject.transform.localEulerAngles = Vector3.Lerp( _guiStartRotation.vector, _guiEndRotation.vector, t);
 
 			Animator animator = _modelGameObject.GetComponentInChildren<Animator>( true);
-			if( animator != null && animator.runtimeAnimatorController != null)
+			if( animator != null && 
+				animator.runtimeAnimatorController != null &&
+				animator.runtimeAnimatorController.animationClips != null)
 			{
 				AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+				int index = _guiAnimationClips.selectedIndex;
 
 				AnimationMode.BeginSampling();
-				AnimationMode.SampleAnimationClip( _modelGameObject, clips[0], t * clips[0].length);
+				AnimationMode.SampleAnimationClip( animator.gameObject, clips[ index], t * clips[ index].length);
 				AnimationMode.EndSampling();
 			}
 		}
