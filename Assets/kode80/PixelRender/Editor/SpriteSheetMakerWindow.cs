@@ -30,7 +30,7 @@ namespace kode80.PixelRender
 		private const int _PreviewLayer = 31;
 
 		private GUIHorizontal _gui;
-		private GUIVertical _guiSide;
+		private GUIScrollView _guiSide;
 		private GUIIntSlider _guiFrameCount;
 		private GUIIntSlider _guiFrameWidth;
 		private GUIIntSlider _guiFrameHeight;
@@ -64,7 +64,10 @@ namespace kode80.PixelRender
 
 			_gui = new GUIHorizontal();
 
-			_guiSide = _gui.Add( new GUIVertical( GUILayout.MaxWidth(290.0f))) as GUIVertical;
+
+			GUIVertical sideContainer = _gui.Add( new GUIVertical( GUILayout.MaxWidth(290.0f))) as GUIVertical;
+			_guiSide = sideContainer.Add( new GUIScrollView()) as GUIScrollView;
+
 			_guiSide.Add( new GUIObjectField<GameObject>( new GUIContent( "GameObject", "GameObject to render as sprite sheet"),
 														  true, GameObjectChanged));
 			_guiFrameCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Count", "Number of frames in the sprite sheet"),
