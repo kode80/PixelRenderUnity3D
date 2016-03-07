@@ -17,6 +17,7 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using kode80.GUIWrapper;
 
@@ -42,6 +43,7 @@ namespace kode80.PixelRender
 		private GUIVector3Field _guiEndRotation;
 		private GUIIntSlider _guiLoopCount;
 		private GUIToggle _guiPingPong;
+		private GUISpriteSheetMaterials _guiMaterials;
 		private GUIButton _guiRender;
 		private GUIVertical _guiPreview;
 
@@ -88,10 +90,13 @@ namespace kode80.PixelRender
 
 			_guiSide.Add( new GUISpace());
 			_guiAnimationClips = _guiSide.Add( new GUIPopup( new GUIContent( "Animation Clip"), null, 0, AnimationClipChanged)) as GUIPopup;
+			_guiMaterials = _guiSide.Add( new GUISpriteSheetMaterials( RotationChanged)) as GUISpriteSheetMaterials;
 			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RotationChanged)) as GUIVector3Field;
 			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RotationChanged)) as GUIVector3Field;
 			_guiLoopCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Loop Count"), 1, 1, 10, RotationChanged)) as GUIIntSlider;
 			_guiPingPong = _guiSide.Add( new GUIToggle( new GUIContent( "Pingpong"), RotationChanged)) as GUIToggle;
+
+
 
 			_guiSide.Add( new GUISpace());
 			GUIColorField outlineColor = _guiSide.Add( new GUIColorField( new GUIContent( "Outline Color"), 
@@ -129,6 +134,7 @@ namespace kode80.PixelRender
 			_guiPositionOffset = null;
 			_guiScaleOffset = null;
 			_guiAnimationClips = null;
+			_guiMaterials = null;
 			_guiStartRotation = null;
 			_guiEndRotation = null;
 			_guiLoopCount = null;
@@ -144,6 +150,19 @@ namespace kode80.PixelRender
 			if( _lastFrameTime <= Time.realtimeSinceStartup - fps)
 			{
 				_lastFrameTime = Time.realtimeSinceStartup;
+
+				if( _modelGameObject != null)
+				{
+					if( _guiCurrentFrame.value < _guiFrameCount.value-1)
+					{
+						_guiCurrentFrame.value++;
+					}
+					else
+					{
+						_guiCurrentFrame.value = 0;
+					}
+					RenderPreview( _guiCurrentFrame.value);
+				}
 			}
 		}
 
@@ -190,6 +209,8 @@ namespace kode80.PixelRender
 				}
 
 				ScaleModelToFitCamera();
+
+				_guiMaterials.materials = GetUniquePixelArtMaterials( _modelGameObject);
 			}
 
 			_guiRender.isEnabled = gameObjectField.value != null;
@@ -486,6 +507,8 @@ namespace kode80.PixelRender
 
 			_rootGameObject.transform.localEulerAngles = Vector3.Lerp( _guiStartRotation.vector, _guiEndRotation.vector, t);
 
+			_guiMaterials.UpdateMaterials( t);
+
 			Animator animator = _modelGameObject.GetComponentInChildren<Animator>( true);
 			if( animator != null && 
 				animator.runtimeAnimatorController != null &&
@@ -498,6 +521,24 @@ namespace kode80.PixelRender
 				AnimationMode.SampleAnimationClip( animator.gameObject, clips[ index], t * clips[ index].length);
 				AnimationMode.EndSampling();
 			}
+		}
+
+		private Material[] GetUniquePixelArtMaterials( GameObject gameObject)
+		{
+			Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>( true);
+			HashSet<Material> uniqueMaterialsSet = new HashSet<Material>();
+			foreach( Renderer renderer in renderers)
+			{
+				if( renderer.sharedMaterial.shader.name == "kode80/PixelRender/PixelArtShader")
+				{
+					uniqueMaterialsSet.Add( renderer.sharedMaterial);
+				}
+			}
+
+			Material[] uniqueMaterials = new Material[ uniqueMaterialsSet.Count];
+			uniqueMaterialsSet.CopyTo( uniqueMaterials);
+
+			return uniqueMaterials;
 		}
 
 		private Rect GetFrameRect( int frameIndex, bool bottomToTop=false)
