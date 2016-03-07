@@ -22,7 +22,7 @@ using kode80.ExtensionMethods;
 
 namespace kode80.PixelRender
 {
-	public class PaletteKMeans : MonoBehaviour 
+	public class PaletteKMeans 
 	{
 		private class Cluster
 		{
@@ -218,8 +218,6 @@ namespace kode80.PixelRender
 
 				i++;
 			}
-
-			Debug.Log( "iterations: " + i + "   moveCount: " + moveCount);
 
 			palette = CreatePalette();
 		}
