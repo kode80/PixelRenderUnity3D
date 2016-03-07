@@ -86,7 +86,7 @@ namespace kode80.PixelRender
 			_guiScaleOffset = _guiSide.Add( new GUISlider( new GUIContent( "Scale Offset"), 0.0f, -10.0f, 10.0f, OffsetChanged)) as GUISlider;
 
 			_guiSide.Add( new GUISpace());
-			_guiAnimationClips = _guiSide.Add( new GUIPopup( new GUIContent( "Animation Clips"), null, 0, AnimationClipChanged)) as GUIPopup;
+			_guiAnimationClips = _guiSide.Add( new GUIPopup( new GUIContent( "Animation Clip"), null, 0, AnimationClipChanged)) as GUIPopup;
 			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RotationChanged)) as GUIVector3Field;
 			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RotationChanged)) as GUIVector3Field;
 			_guiLoopCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Loop Count"), 1, 1, 10, RotationChanged)) as GUIIntSlider;
@@ -110,7 +110,7 @@ namespace kode80.PixelRender
 			RenderPreview( 0);
 
 			_guiStartRotation.vector = Vector3.zero;
-			_guiEndRotation.vector = new Vector3( 0.0f, 180.0f, 0.0f);
+			_guiEndRotation.vector = Vector3.zero;
 			outlineColor.color = _previewOutline.outlineColor;
 			outlineThreshold.value = _previewOutline.depthThreshold;
 		}
