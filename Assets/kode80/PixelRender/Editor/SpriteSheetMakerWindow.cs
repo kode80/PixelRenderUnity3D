@@ -42,6 +42,7 @@ namespace kode80.PixelRender
 		private GUIVector3Field _guiEndRotation;
 		private GUIIntSlider _guiLoopCount;
 		private GUIToggle _guiPingPong;
+		private GUIButton _guiRender;
 		private GUIVertical _guiPreview;
 
 		private RenderTexture _previewTexture;
@@ -68,8 +69,8 @@ namespace kode80.PixelRender
 			GUIVertical sideContainer = _gui.Add( new GUIVertical( GUILayout.MaxWidth(290.0f))) as GUIVertical;
 			_guiSide = sideContainer.Add( new GUIScrollView()) as GUIScrollView;
 
-			_guiSide.Add( new GUIObjectField<GameObject>( new GUIContent( "GameObject", "GameObject to render as sprite sheet"),
-														  true, GameObjectChanged));
+			GUIObjectField<GameObject> guiGameObject = _guiSide.Add( new GUIObjectField<GameObject>( new GUIContent( "GameObject", "GameObject to render as sprite sheet"),
+				true, GameObjectChanged)) as GUIObjectField<GameObject>;
 			_guiFrameCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Count", "Number of frames in the sprite sheet"),
 				12, 1, 64, FrameCountChanged)) as GUIIntSlider;
 			_guiFrameWidth = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Width", "Width of each frame in the sprite sheet"),
@@ -99,7 +100,7 @@ namespace kode80.PixelRender
 				0.05f, 0.0f, 0.05f, OutlineThresholdChanged)) as GUISlider;
 
 			_guiSide.Add( new GUISpace());
-			_guiSide.Add( new GUIButton( new GUIContent( "Render"), RenderModel));
+			_guiRender = _guiSide.Add( new GUIButton( new GUIContent( "Render"), RenderModel)) as GUIButton;
 
 			_guiPreview = _gui.Add( new GUIVertical( GUILayout.ExpandWidth( true), GUILayout.ExpandHeight( true))) as GUIVertical;
 			_guiPreview.shouldStoreLastRect = true;
@@ -107,6 +108,8 @@ namespace kode80.PixelRender
 			InitPreviewRenderTexture();
 			InitPreviewCamera();
 			InitRootGameObject();
+			guiGameObject.value = _modelGameObject;
+			GameObjectChanged( guiGameObject);
 			RenderPreview( 0);
 
 			_guiStartRotation.vector = Vector3.zero;
@@ -119,10 +122,19 @@ namespace kode80.PixelRender
 		{
 			_gui = null;
 			_guiSide = null;
+			_guiFrameCount = null;
+			_guiFrameWidth = null;
+			_guiFrameHeight = null;
+			_guiCurrentFrame = null;
+			_guiPositionOffset = null;
+			_guiScaleOffset = null;
+			_guiAnimationClips = null;
+			_guiStartRotation = null;
+			_guiEndRotation = null;
+			_guiLoopCount = null;
+			_guiPingPong = null;
+			_guiRender = null;
 			_guiPreview = null;
-			_previewTexture = null;
-			_rootGameObject = null;
-			_modelGameObject = null;
 		}
 
 		void Update()
@@ -160,23 +172,28 @@ namespace kode80.PixelRender
 			{
 				_modelGameObject.transform.parent = null;
 				DestroyImmediate( _modelGameObject);
+				_modelGameObject = null;
 			}
 
-			_modelGameObject = GameObject.Instantiate( gameObjectField.value);
-			_modelGameObject.name = _ModelName;
-			_modelGameObject.transform.parent = _rootGameObject.transform;
-			_modelGameObject.transform.localPosition = Vector3.zero;
-
-			Transform[] children = _modelGameObject.GetComponentsInChildren<Transform>(true);
-			foreach( Transform child in children)
+			if( gameObjectField.value != null)
 			{
-				child.gameObject.hideFlags = HideFlags.HideAndDontSave;
-				child.gameObject.layer = _PreviewLayer;
+				_modelGameObject = GameObject.Instantiate( gameObjectField.value);
+				_modelGameObject.name = _ModelName;
+				_modelGameObject.transform.parent = _rootGameObject.transform;
+				_modelGameObject.transform.localPosition = Vector3.zero;
+
+				Transform[] children = _modelGameObject.GetComponentsInChildren<Transform>(true);
+				foreach( Transform child in children)
+				{
+					child.gameObject.hideFlags = HideFlags.HideAndDontSave;
+					child.gameObject.layer = _PreviewLayer;
+				}
+
+				ScaleModelToFitCamera();
 			}
 
+			_guiRender.isEnabled = gameObjectField.value != null;
 			UpdateAnimationClipsPopup();
-			ScaleModelToFitCamera();
-
 			RenderPreview( _guiCurrentFrame.value);
 		}
 
@@ -339,47 +356,30 @@ namespace kode80.PixelRender
 
 		private void InitRootGameObject()
 		{
-			Debug.Log( "InitRootGameObject");
 			_rootGameObject = GameObject.Find( _RootName);
 			if( _rootGameObject == null)
 			{
-				Debug.Log("Creating preview root");
 				_rootGameObject = EditorUtility.CreateGameObjectWithHideFlags( _RootName, 
 																			   HideFlags.HideAndDontSave);
-			}
-			else
-			{
-				Debug.Log( "Root GameObject already exists");
 			}
 
 			// Use transform.Find, as model may be deactivated
 			Transform transform = _rootGameObject.transform.Find( _ModelName);
 			_modelGameObject = transform == null ? null : transform.gameObject;
-			if( _modelGameObject == null)
+			if( _modelGameObject != null)
 			{
-				Debug.Log("Creating model gameobject");
-
-				_modelGameObject = GameObject.CreatePrimitive( PrimitiveType.Sphere);
-				_modelGameObject.hideFlags = HideFlags.HideAndDontSave;
-				_modelGameObject.name = _ModelName;
-				_modelGameObject.transform.parent = _rootGameObject.transform;
-			}
-			else
-			{
-				Debug.Log("Model gameobject already exists");
+				_modelGameObject.transform.localPosition = Vector3.zero;
+				_modelGameObject.layer = _PreviewLayer;
+				_modelGameObject.SetActive( false);
 			}
 
 			_rootGameObject.transform.position = Vector3.zero;
 			_rootGameObject.layer = _PreviewLayer;
-
-			_modelGameObject.transform.localPosition = Vector3.zero;
-			_modelGameObject.layer = _PreviewLayer;
-			_modelGameObject.SetActive( false);
 		}
 
 		private void UpdateAnimationClipsPopup()
 		{
-			Animator animator = _modelGameObject.GetComponentInChildren<Animator>( true);
+			Animator animator = _modelGameObject != null ? _modelGameObject.GetComponentInChildren<Animator>( true) : null;
 			GUIContent[] options = null;
 
 			if( animator != null && 
@@ -515,7 +515,6 @@ namespace kode80.PixelRender
 
 		private void RenderPreview( int frame)
 		{
-			string type = _modelGameObject == null ? "null" : _modelGameObject.GetType().ToString();
 			if( _modelGameObject != null)
 			{
 				_modelGameObject.SetActive( true);

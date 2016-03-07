@@ -159,7 +159,6 @@ namespace kode80.PixelRender
 
 			while( _buckets.Count < targetCount)
 			{
-				int count = _buckets.Count;
 				List<Bucket> newBuckets = new List<Bucket>();
 				foreach( Bucket currentBucket in _buckets)
 				{
