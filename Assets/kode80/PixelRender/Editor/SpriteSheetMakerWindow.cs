@@ -429,7 +429,6 @@ namespace kode80.PixelRender
 
 			Bounds bounds = GetBounds( _modelGameObject);
 			float maxDimension = Mathf.Max( bounds.extents.x, Mathf.Max( bounds.extents.y, bounds.extents.z)) * 2.0f;
-			maxDimension += maxDimension * 0.5f;
 
 			float distance = Mathf.Abs( _previewCamera.transform.position.z);
 			Vector3 bottomLeft = _previewCamera.ViewportToWorldPoint( new Vector3( 0, 0, distance));
