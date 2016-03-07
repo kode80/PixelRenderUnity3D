@@ -474,6 +474,7 @@ namespace kode80.PixelRender
 		private void SetupFrame( int frame)
 		{
 			float t = (float)frame / (float)(_guiFrameCount.value - 1);
+			if( float.IsNaN( t)) { t = 0.0f; }
 
 			float loopedT = t * (float)_guiLoopCount.value;
 			t = loopedT - Mathf.Floor( loopedT);
