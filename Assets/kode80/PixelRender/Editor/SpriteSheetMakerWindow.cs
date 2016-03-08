@@ -48,7 +48,7 @@ namespace kode80.PixelRender
 		private GUIToggle _guiPingPong;
 		private GUISpriteSheetClips _guiAnimationClips;
 		private GUISpriteSheetMaterials _guiMaterials;
-		private GUIButton _guiRender;
+		private GUIButton _guiExport;
 		private GUIVertical _guiPreview;
 
 		private RenderTexture _previewTexture;
@@ -93,27 +93,29 @@ namespace kode80.PixelRender
 			_guiPlay = _guiSide.Add( new GUIToggle( new GUIContent( "Play"))) as GUIToggle;
 
 			_guiSide.Add( new GUISpace());
-			_guiPositionOffset = _guiSide.Add( new GUIVector3Field( new GUIContent( "Position Offset"), OffsetChanged)) as GUIVector3Field;
-			_guiScaleOffset = _guiSide.Add( new GUISlider( new GUIContent( "Scale Offset"), 0.0f, -10.0f, 10.0f, OffsetChanged)) as GUISlider;
+			GUIFoldout offsetFoldout = _guiSide.Add( new GUIFoldout( new GUIContent( "Position/Scale"))) as GUIFoldout;
+			_guiPositionOffset = offsetFoldout.Add( new GUIVector3Field( new GUIContent( "Position Offset"), OffsetChanged)) as GUIVector3Field;
+			_guiScaleOffset = offsetFoldout.Add( new GUISlider( new GUIContent( "Scale Offset"), 0.0f, -10.0f, 10.0f, OffsetChanged)) as GUISlider;
 
-			_guiSide.Add( new GUISpace());
 			_guiAnimationClips = _guiSide.Add( new GUISpriteSheetClips( RenderPreviewAction)) as GUISpriteSheetClips;
 			_guiMaterials = _guiSide.Add( new GUISpriteSheetMaterials( RenderPreviewAction)) as GUISpriteSheetMaterials;
-			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RenderPreviewAction)) as GUIVector3Field;
-			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RenderPreviewAction)) as GUIVector3Field;
-			_guiLoopCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Loop Count"), 1, 1, 10, RenderPreviewAction)) as GUIIntSlider;
-			_guiPingPong = _guiSide.Add( new GUIToggle( new GUIContent( "Pingpong"), RenderPreviewAction)) as GUIToggle;
 
+			GUIFoldout rotationFoldout = _guiSide.Add( new GUIFoldout( new GUIContent( "Rotation"))) as GUIFoldout;
+			_guiStartRotation = rotationFoldout.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RenderPreviewAction)) as GUIVector3Field;
+			_guiEndRotation = rotationFoldout.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RenderPreviewAction)) as GUIVector3Field;
 
+			GUIFoldout loopFoldout = _guiSide.Add( new GUIFoldout( new GUIContent( "Rotation/Material Looping"))) as GUIFoldout;
+			_guiLoopCount = loopFoldout.Add( new GUIIntSlider( new GUIContent( "Loop Count"), 1, 1, 10, RenderPreviewAction)) as GUIIntSlider;
+			_guiPingPong = loopFoldout.Add( new GUIToggle( new GUIContent( "Pingpong"), RenderPreviewAction)) as GUIToggle;
 
-			_guiSide.Add( new GUISpace());
-			GUIColorField outlineColor = _guiSide.Add( new GUIColorField( new GUIContent( "Outline Color"), 
+			GUIFoldout outlineFoldout = _guiSide.Add( new GUIFoldout( new GUIContent( "Outline Effect"))) as GUIFoldout;
+			GUIColorField outlineColor = outlineFoldout.Add( new GUIColorField( new GUIContent( "Outline Color"), 
 				OutlineColorChanged)) as GUIColorField;
-			GUISlider outlineThreshold = _guiSide.Add( new GUISlider( new GUIContent( "Outline Threshold"), 
+			GUISlider outlineThreshold = outlineFoldout.Add( new GUISlider( new GUIContent( "Outline Threshold"), 
 				0.05f, 0.0f, 0.05f, OutlineThresholdChanged)) as GUISlider;
 
 			_guiSide.Add( new GUISpace());
-			_guiRender = _guiSide.Add( new GUIButton( new GUIContent( "Render"), RenderModel)) as GUIButton;
+			_guiExport = _guiSide.Add( new GUIButton( new GUIContent( "Export Sprite Sheet"), ExportSpriteSheet)) as GUIButton;
 
 			_guiPreview = _gui.Add( new GUIVertical( GUILayout.ExpandWidth( true), GUILayout.ExpandHeight( true))) as GUIVertical;
 			_guiPreview.shouldStoreLastRect = true;
@@ -148,7 +150,7 @@ namespace kode80.PixelRender
 			_guiEndRotation = null;
 			_guiLoopCount = null;
 			_guiPingPong = null;
-			_guiRender = null;
+			_guiExport = null;
 			_guiPreview = null;
 		}
 
@@ -225,7 +227,7 @@ namespace kode80.PixelRender
 				_guiMaterials.materials = null;
 			}
 
-			_guiRender.isEnabled = gameObjectField.value != null;
+			_guiExport.isEnabled = gameObjectField.value != null;
 			RenderPreview( _guiCurrentFrame.value);
 		}
 
@@ -271,7 +273,7 @@ namespace kode80.PixelRender
 			RenderPreview( _guiCurrentFrame.value);
 		}
 
-		private void RenderModel( GUIBase sender)
+		private void ExportSpriteSheet( GUIBase sender)
 		{
 			int frameCount = _guiFrameCount.value;
 			Vector2 sheetDimensions = GetSheetDimensions();
@@ -366,7 +368,7 @@ namespace kode80.PixelRender
 			_previewCamera = cameraGO.GetComponent<Camera>();
 			_previewOutline = cameraGO.GetComponent<PixelOutlineEffect>();
 			_previewOutline.outlineColor = Color.black;
-			_previewOutline.depthThreshold = 0.0001f;
+			_previewOutline.depthThreshold = 0.001f;
 
 			_previewCamera.targetTexture = _previewTexture;
 			_previewCamera.clearFlags = CameraClearFlags.SolidColor;
