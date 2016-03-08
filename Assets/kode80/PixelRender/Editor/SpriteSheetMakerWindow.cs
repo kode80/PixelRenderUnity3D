@@ -84,9 +84,9 @@ namespace kode80.PixelRender
 
 			_guiSide.Add( new GUISpace());
 			_guiCurrentFrame = _guiSide.Add( new GUIIntSlider( new GUIContent( "Current Frame"), 
-				0, 0, _guiFrameCount.value-1, CurrentFrameChanged)) as GUIIntSlider;
+				0, 0, _guiFrameCount.value-1, RenderPreviewAction)) as GUIIntSlider;
 			_guiDuration = _guiSide.Add( new GUISlider( new GUIContent( "Duration"), 
-				1, 0, 100, RotationChanged)) as GUISlider;
+				1, 0, 100, RenderPreviewAction)) as GUISlider;
 			_guiPlay = _guiSide.Add( new GUIToggle( new GUIContent( "Play"))) as GUIToggle;
 
 			_guiSide.Add( new GUISpace());
@@ -94,12 +94,12 @@ namespace kode80.PixelRender
 			_guiScaleOffset = _guiSide.Add( new GUISlider( new GUIContent( "Scale Offset"), 0.0f, -10.0f, 10.0f, OffsetChanged)) as GUISlider;
 
 			_guiSide.Add( new GUISpace());
-			_guiAnimationClips = _guiSide.Add( new GUIPopup( new GUIContent( "Animation Clip"), null, 0, AnimationClipChanged)) as GUIPopup;
-			_guiMaterials = _guiSide.Add( new GUISpriteSheetMaterials( RotationChanged)) as GUISpriteSheetMaterials;
-			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RotationChanged)) as GUIVector3Field;
-			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RotationChanged)) as GUIVector3Field;
-			_guiLoopCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Loop Count"), 1, 1, 10, RotationChanged)) as GUIIntSlider;
-			_guiPingPong = _guiSide.Add( new GUIToggle( new GUIContent( "Pingpong"), RotationChanged)) as GUIToggle;
+			_guiAnimationClips = _guiSide.Add( new GUIPopup( new GUIContent( "Animation Clip"), null, 0, RenderPreviewAction)) as GUIPopup;
+			_guiMaterials = _guiSide.Add( new GUISpriteSheetMaterials( RenderPreviewAction)) as GUISpriteSheetMaterials;
+			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RenderPreviewAction)) as GUIVector3Field;
+			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RenderPreviewAction)) as GUIVector3Field;
+			_guiLoopCount = _guiSide.Add( new GUIIntSlider( new GUIContent( "Loop Count"), 1, 1, 10, RenderPreviewAction)) as GUIIntSlider;
+			_guiPingPong = _guiSide.Add( new GUIToggle( new GUIContent( "Pingpong"), RenderPreviewAction)) as GUIToggle;
 
 
 
@@ -237,23 +237,13 @@ namespace kode80.PixelRender
 			_guiCurrentFrame.value = Math.Min( _guiFrameCount.value, _guiCurrentFrame.value);
 		}
 
-		private void CurrentFrameChanged( GUIBase sender)
-		{
-			RenderPreview( _guiCurrentFrame.value);
-		}
-
 		private void OffsetChanged( GUIBase sender)
 		{
 			ScaleModelToFitCamera();
 			RenderPreview( _guiCurrentFrame.value);
 		}
 
-		private void AnimationClipChanged( GUIBase sender)
-		{
-			RenderPreview( _guiCurrentFrame.value);
-		}
-
-		private void RotationChanged( GUIBase sender)
+		private void RenderPreviewAction( GUIBase sender)
 		{
 			RenderPreview( _guiCurrentFrame.value);
 		}
