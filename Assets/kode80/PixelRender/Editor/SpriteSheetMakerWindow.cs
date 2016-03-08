@@ -35,6 +35,7 @@ namespace kode80.PixelRender
 		private GUIIntSlider _guiFrameCount;
 		private GUIIntSlider _guiFrameWidth;
 		private GUIIntSlider _guiFrameHeight;
+		private GUISlider _guiFOV;
 		private GUIIntSlider _guiCurrentFrame;
 		private GUISlider _guiDuration;
 		private GUIToggle _guiPlay;
@@ -81,6 +82,7 @@ namespace kode80.PixelRender
 				100, 32, 512, ResizeFrame)) as GUIIntSlider;
 			_guiFrameHeight = _guiSide.Add( new GUIIntSlider( new GUIContent( "Frame Height", "Height of each frame in the sprite sheet"),
 				100, 32, 512, ResizeFrame)) as GUIIntSlider;
+			_guiFOV = _guiSide.Add( new GUISlider( new GUIContent( "FOV"), 20, 1, 179, OffsetChanged)) as GUISlider;
 
 			_guiSide.Add( new GUISpace());
 			_guiCurrentFrame = _guiSide.Add( new GUIIntSlider( new GUIContent( "Current Frame"), 
@@ -442,6 +444,8 @@ namespace kode80.PixelRender
 
 			Bounds bounds = GetBounds( _modelGameObject);
 			float maxDimension = Mathf.Max( bounds.extents.x, Mathf.Max( bounds.extents.y, bounds.extents.z)) * 2.0f;
+
+			_previewCamera.fieldOfView = _guiFOV.value;
 
 			float distance = Mathf.Abs( _previewCamera.transform.position.z);
 			Vector3 bottomLeft = _previewCamera.ViewportToWorldPoint( new Vector3( 0, 0, distance));
