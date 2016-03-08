@@ -36,6 +36,8 @@ namespace kode80.PixelRender
 		private GUIIntSlider _guiFrameWidth;
 		private GUIIntSlider _guiFrameHeight;
 		private GUIIntSlider _guiCurrentFrame;
+		private GUISlider _guiDuration;
+		private GUIToggle _guiPlay;
 		private GUIVector3Field _guiPositionOffset;
 		private GUISlider _guiScaleOffset;
 		private GUIPopup _guiAnimationClips;
@@ -83,6 +85,9 @@ namespace kode80.PixelRender
 			_guiSide.Add( new GUISpace());
 			_guiCurrentFrame = _guiSide.Add( new GUIIntSlider( new GUIContent( "Current Frame"), 
 				0, 0, _guiFrameCount.value-1, CurrentFrameChanged)) as GUIIntSlider;
+			_guiDuration = _guiSide.Add( new GUISlider( new GUIContent( "Duration"), 
+				1, 0, 100, RotationChanged)) as GUISlider;
+			_guiPlay = _guiSide.Add( new GUIToggle( new GUIContent( "Play"))) as GUIToggle;
 
 			_guiSide.Add( new GUISpace());
 			_guiPositionOffset = _guiSide.Add( new GUIVector3Field( new GUIContent( "Position Offset"), OffsetChanged)) as GUIVector3Field;
@@ -145,22 +150,19 @@ namespace kode80.PixelRender
 
 		void Update()
 		{
-			float fps = 1.0f / 10.0f;
+			float fps = _guiDuration.value / _guiFrameCount.value;
 
 			if( _lastFrameTime <= Time.realtimeSinceStartup - fps)
 			{
+				float delta = Time.realtimeSinceStartup - _lastFrameTime;
 				_lastFrameTime = Time.realtimeSinceStartup;
 
-				if( _modelGameObject != null)
+				if( _modelGameObject != null && _guiPlay.isToggled)
 				{
-					if( _guiCurrentFrame.value < _guiFrameCount.value-1)
-					{
-						_guiCurrentFrame.value++;
-					}
-					else
-					{
-						_guiCurrentFrame.value = 0;
-					}
+					int frames = (int)(delta / fps);
+					int nextFrame = (_guiCurrentFrame.value + frames) % _guiFrameCount.value;
+					_guiCurrentFrame.value = nextFrame;
+						
 					RenderPreview( _guiCurrentFrame.value);
 				}
 			}
