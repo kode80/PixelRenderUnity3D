@@ -278,7 +278,9 @@ namespace kode80.PixelRender
 			StorePrefs();
 
 			_gui = new GUIVertical();
-			_guiTexture = _gui.Add( new GUITextureField( new GUIContent( "Palette Texture"), 
+			GUIScrollView scroll = _gui.Add( new GUIScrollView()) as GUIScrollView;
+
+			_guiTexture = scroll.Add( new GUITextureField( new GUIContent( "Palette Texture"), 
 														 PaletteTextureChanged, 
 														 PaletteTextureWillChange)) as GUITextureField;
 			_guiTexture.texture = texture;
@@ -287,16 +289,21 @@ namespace kode80.PixelRender
 
 			if( IsTextureReadWrite( texture))
 			{
-				_guiEditMode = _gui.Add( new GUIEnumPopup( new GUIContent( "Edit Mode", 
+				_guiEditMode = scroll.Add( new GUIEnumPopup( new GUIContent( "Edit Mode", 
 					"Palette edit operations affect either the single color or all colors in row/column/palette."), 
 					PaletteEditMode.Single)) as GUIEnumPopup;
 				
-				_gui.Add( new GUIIntSlider( new GUIContent( "Shades", "Number of shades per color in palette"),
+				scroll.Add( new GUIIntSlider( new GUIContent( "Shades", "Number of shades per color in palette"),
 					texture.height, 2, 16, ShadeCountChanged));
 				_guiColorFields = new List<GUIColorField>();
+
+				// Adding 15 accounts for horizontal scrollbar if needed.
+				// Need a non-hardcoded-hacky way of getting this info...
+				float maxHeight = texture.height * 20.0f + 15.0f;
+				GUIScrollView paletteScroll = scroll.Add( new GUIScrollView( GUILayout.MaxHeight( maxHeight))) as GUIScrollView;
 				for( int y=texture.height-1; y>=0; y--)
 				{
-					GUIHorizontal horizontal = _gui.Add( new GUIHorizontal()) as GUIHorizontal;
+					GUIHorizontal horizontal = paletteScroll.Add( new GUIHorizontal()) as GUIHorizontal;
 					for( int x=0; x<texture.width; x++)
 					{
 						GUIColorField color = horizontal.Add( new GUIColorField( null, ColorChanged)) as GUIColorField;
@@ -307,14 +314,14 @@ namespace kode80.PixelRender
 					}
 				}
 
-				_gui.Add( new GUISpace());
-				_guiHue = _gui.Add( new GUISlider( new GUIContent( "Hue Offset", 
+				scroll.Add( new GUISpace());
+				_guiHue = scroll.Add( new GUISlider( new GUIContent( "Hue Offset", 
 					"Amount to offset hue when generating shades"), 0.0f, -1.0f, 1.0f)) as GUISlider;
-				_guiSaturation = _gui.Add( new GUISlider( new GUIContent( "Saturation Offset", 
+				_guiSaturation = scroll.Add( new GUISlider( new GUIContent( "Saturation Offset", 
 					"Amount to offset saturation when generating shades"), 0.0f, -1.0f, 1.0f)) as GUISlider;
-				_guiLuminance = _gui.Add( new GUISlider( new GUIContent( "Luminance Offset", 
+				_guiLuminance = scroll.Add( new GUISlider( new GUIContent( "Luminance Offset", 
 					"Amount to offset luminance when generating shades"), 0.0f, -1.0f, 1.0f)) as GUISlider;
-				_gui.Add( new GUIButton( new GUIContent( "Generate Shades", "Generate shades from root colors"), GenerateShadesClicked));
+				scroll.Add( new GUIButton( new GUIContent( "Generate Shades", "Generate shades from root colors"), GenerateShadesClicked));
 
 				LoadPrefs();
 			}
