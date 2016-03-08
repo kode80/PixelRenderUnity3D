@@ -130,7 +130,7 @@ namespace kode80.PixelRender
 
 				RebuildGUI( palette);
 
-				string path = AssetDatabase.GetAssetPath( Shader.Find( "kode80/PixelRender/PixelCellShader"));
+				string path = AssetDatabase.GetAssetPath( Shader.Find( "kode80/PixelRender/PixelArtShader"));
 				AssetDatabase.ImportAsset( path, ImportAssetOptions.ForceUpdate);
 			}
 			else
