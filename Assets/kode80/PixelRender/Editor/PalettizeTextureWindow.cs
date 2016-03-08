@@ -203,13 +203,17 @@ namespace kode80.PixelRender
 			}
 
 			PaletteKMeans kMeans = new PaletteKMeans( new List<UInt32>( uniqueColors), maxColors, 30);
+			Dictionary<UInt32, int> paletteLUT = new Dictionary<UInt32, int>();
+			foreach( UInt32 color in uniqueColors) {
+				paletteLUT[ color] = kMeans.GetIndex( color);
+			}
 
-			int uniqueCount = kMeans.palette.Count;
+			int paletteCount = kMeans.palette.Count;
 
 			for( int i=0; i<data.Length; i++)
 			{
-				byte paletteIndex = (byte) kMeans.GetIndex( data[i].ToRGBAUInt32());
-				paletteIndex = (byte) ( ((float)paletteIndex / (float)(uniqueCount - 1)) * 255.0f);
+				byte paletteIndex = (byte) paletteLUT[ data[i].ToRGBAUInt32()];
+				paletteIndex = (byte) ( ((float)paletteIndex / (float)(paletteCount - 1)) * 255.0f);
 				data[ i] = new Color32( paletteIndex, paletteIndex, paletteIndex, 255);
 
 				if( i % ProgressUpdateFreq == 0)
