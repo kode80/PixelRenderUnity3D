@@ -491,14 +491,13 @@ namespace kode80.PixelRender
 
 		private void SetupFrame( int frame)
 		{
-			float t = (float)frame / (float)(_guiFrameCount.value - 1);
-			if( float.IsNaN( t)) { t = 0.0f; }
+			float time = (float)frame / (float)(_guiFrameCount.value - 1);
+			if( float.IsNaN( time)) { time = 0.0f; }
 
-			t = TimeUtil.Loop( t, _guiLoopCount.value - 1, _guiPingPong.isToggled);
+			float loopedTime = TimeUtil.Loop( time, _guiLoopCount.value - 1, _guiPingPong.isToggled);
 
-			_rootGameObject.transform.localEulerAngles = Vector3.Lerp( _guiStartRotation.vector, _guiEndRotation.vector, t);
-
-			_guiMaterials.UpdateMaterials( t);
+			_rootGameObject.transform.localEulerAngles = Vector3.Lerp( _guiStartRotation.vector, _guiEndRotation.vector, loopedTime);
+			_guiMaterials.UpdateMaterials( loopedTime);
 
 			Animator animator = _modelGameObject.GetComponentInChildren<Animator>( true);
 			if( animator != null && 
@@ -509,7 +508,7 @@ namespace kode80.PixelRender
 				int index = _guiAnimationClips.selectedIndex;
 
 				AnimationMode.BeginSampling();
-				AnimationMode.SampleAnimationClip( animator.gameObject, clips[ index], t * clips[ index].length);
+				AnimationMode.SampleAnimationClip( animator.gameObject, clips[ index], time * clips[ index].length);
 				AnimationMode.EndSampling();
 			}
 		}
