@@ -48,13 +48,15 @@ namespace kode80.PixelRender
 		void OnEnable()
 		{
 			_gui = new GUIVertical();
-			_guiTexture = _gui.Add( new GUITextureField( new GUIContent( "Texture"), TextureChanged)) as GUITextureField;
-			_guiMaxColors = _gui.Add( new GUIIntSlider( new GUIContent( "Max Colors"), 32, 2, 32)) as GUIIntSlider;
-			_guiConvert = _gui.Add( new GUIButton( new GUIContent( "Convert"), ConvertClicked)) as GUIButton;
-			_gui.Add( new GUISpace());
-			_guiPalette = _gui.Add( new GUITextureField( new GUIContent( "Palette"), null)) as GUITextureField;
-			_guiPalettizedTexture = _gui.Add( new GUITextureField( new GUIContent( "Palettized Texture"), null)) as GUITextureField;
-			_guiSave = _gui.Add( new GUIButton( new GUIContent( "Save Palette & Texture"), SaveClicked)) as GUIButton;
+			GUIScrollView scroll = _gui.Add( new GUIScrollView()) as GUIScrollView;
+
+			_guiTexture = scroll.Add( new GUITextureField( new GUIContent( "Texture"), TextureChanged)) as GUITextureField;
+			_guiMaxColors = scroll.Add( new GUIIntSlider( new GUIContent( "Max Colors"), 32, 2, 32)) as GUIIntSlider;
+			_guiConvert = scroll.Add( new GUIButton( new GUIContent( "Convert"), ConvertClicked)) as GUIButton;
+			scroll.Add( new GUISpace());
+			_guiPalette = scroll.Add( new GUITextureField( new GUIContent( "Palette"), null)) as GUITextureField;
+			_guiPalettizedTexture = scroll.Add( new GUITextureField( new GUIContent( "Palettized Texture"), null)) as GUITextureField;
+			_guiSave = scroll.Add( new GUIButton( new GUIContent( "Save Palette & Texture"), SaveClicked)) as GUIButton;
 
 			_guiPalette.isEnabled = false;
 			_guiPalettizedTexture.isEnabled = false;
