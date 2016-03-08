@@ -42,11 +42,11 @@ namespace kode80.PixelRender
 		private GUIToggle _guiPlay;
 		private GUIVector3Field _guiPositionOffset;
 		private GUISlider _guiScaleOffset;
-		private GUIPopup _guiAnimationClips;
 		private GUIVector3Field _guiStartRotation;
 		private GUIVector3Field _guiEndRotation;
 		private GUIIntSlider _guiLoopCount;
 		private GUIToggle _guiPingPong;
+		private GUISpriteSheetClips _guiAnimationClips;
 		private GUISpriteSheetMaterials _guiMaterials;
 		private GUIButton _guiRender;
 		private GUIVertical _guiPreview;
@@ -97,7 +97,7 @@ namespace kode80.PixelRender
 			_guiScaleOffset = _guiSide.Add( new GUISlider( new GUIContent( "Scale Offset"), 0.0f, -10.0f, 10.0f, OffsetChanged)) as GUISlider;
 
 			_guiSide.Add( new GUISpace());
-			_guiAnimationClips = _guiSide.Add( new GUIPopup( new GUIContent( "Animation Clip"), null, 0, RenderPreviewAction)) as GUIPopup;
+			_guiAnimationClips = _guiSide.Add( new GUISpriteSheetClips( RenderPreviewAction)) as GUISpriteSheetClips;
 			_guiMaterials = _guiSide.Add( new GUISpriteSheetMaterials( RenderPreviewAction)) as GUISpriteSheetMaterials;
 			_guiStartRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "Start Rotation"), RenderPreviewAction)) as GUIVector3Field;
 			_guiEndRotation = _guiSide.Add( new GUIVector3Field( new GUIContent( "End Rotation"), RenderPreviewAction)) as GUIVector3Field;
@@ -141,6 +141,7 @@ namespace kode80.PixelRender
 			_guiCurrentFrame = null;
 			_guiPositionOffset = null;
 			_guiScaleOffset = null;
+			_guiAnimationClips = null;
 			_guiAnimationClips = null;
 			_guiMaterials = null;
 			_guiStartRotation = null;
@@ -215,11 +216,16 @@ namespace kode80.PixelRender
 
 				ScaleModelToFitCamera();
 
+				_guiAnimationClips.animators = _modelGameObject.GetComponentsInChildren<Animator>( true);
 				_guiMaterials.materials = GetUniquePixelArtMaterials( _modelGameObject);
+			}
+			else 
+			{
+				_guiAnimationClips.animators = null;
+				_guiMaterials.materials = null;
 			}
 
 			_guiRender.isEnabled = gameObjectField.value != null;
-			UpdateAnimationClipsPopup();
 			RenderPreview( _guiCurrentFrame.value);
 		}
 
@@ -393,30 +399,6 @@ namespace kode80.PixelRender
 			_rootGameObject.layer = _PreviewLayer;
 		}
 
-		private void UpdateAnimationClipsPopup()
-		{
-			Animator animator = _modelGameObject != null ? _modelGameObject.GetComponentInChildren<Animator>( true) : null;
-			GUIContent[] options = null;
-
-			if( animator != null && 
-				animator.runtimeAnimatorController != null &&
-				animator.runtimeAnimatorController.animationClips != null &&
-				animator.runtimeAnimatorController.animationClips.Length > 0)
-			{
-				AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
-				int count = clips.Length;
-				options = new GUIContent[ count];
-
-				for( int i=0; i<count; i++)
-				{
-					options[i] = new GUIContent( clips[i].name);
-				}
-			}
-
-			_guiAnimationClips.displayedOptions = options;
-			_guiAnimationClips.isEnabled = options != null;
-		}
-
 		private Rect SizeRectToFit( Rect input, Rect container, bool clip=true)
 		{
 			float scale = Mathf.Min( container.width/input.width, container.height/input.height);
@@ -499,18 +481,7 @@ namespace kode80.PixelRender
 			_rootGameObject.transform.localEulerAngles = Vector3.Lerp( _guiStartRotation.vector, _guiEndRotation.vector, loopedTime);
 			_guiMaterials.UpdateMaterials( loopedTime);
 
-			Animator animator = _modelGameObject.GetComponentInChildren<Animator>( true);
-			if( animator != null && 
-				animator.runtimeAnimatorController != null &&
-				animator.runtimeAnimatorController.animationClips != null)
-			{
-				AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
-				int index = _guiAnimationClips.selectedIndex;
-
-				AnimationMode.BeginSampling();
-				AnimationMode.SampleAnimationClip( animator.gameObject, clips[ index], time * clips[ index].length);
-				AnimationMode.EndSampling();
-			}
+			_guiAnimationClips.SampleAnimations( time);
 		}
 
 		private Material[] GetUniquePixelArtMaterials( GameObject gameObject)
