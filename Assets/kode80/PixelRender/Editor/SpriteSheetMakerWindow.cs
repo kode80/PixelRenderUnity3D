@@ -20,6 +20,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using kode80.GUIWrapper;
+using kode80.Utils;
 
 namespace kode80.PixelRender
 {
@@ -493,13 +494,7 @@ namespace kode80.PixelRender
 			float t = (float)frame / (float)(_guiFrameCount.value - 1);
 			if( float.IsNaN( t)) { t = 0.0f; }
 
-			float loopedT = t * (float)_guiLoopCount.value;
-			t = loopedT - Mathf.Floor( loopedT);
-
-			if( _guiPingPong.isToggled && ((int)loopedT % 2) == 1)
-			{
-				t = 1.0f - t;
-			}
+			t = TimeUtil.Loop( t, _guiLoopCount.value - 1, _guiPingPong.isToggled);
 
 			_rootGameObject.transform.localEulerAngles = Vector3.Lerp( _guiStartRotation.vector, _guiEndRotation.vector, t);
 
