@@ -1,0 +1,11 @@
+PixelRender ChangeLog
+---------------------
+
+PixelRender 1.1 (March 9th 2016):
+* Palettize Texture tool:
+	* Displays a progress bar and can be canceled
+	* Optimized to convert significantly faster
+	* Includes an automatic palette reduction pass (see documentation for details)
+* Added MinimumSceneTemplate to examples, useful for creating new PixelRender scenes
+* Added Sprite Sheet Maker tool for rendering & exporting Unity3D sprite animations (see documentation for details)
+* Minor UI fixes for all editor tools
