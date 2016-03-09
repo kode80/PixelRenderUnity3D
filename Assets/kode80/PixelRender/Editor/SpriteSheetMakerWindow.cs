@@ -29,6 +29,7 @@ namespace kode80.PixelRender
 		private const string _RootName = "com.kode80.PixelRender.SpriteSheetMaker.RootGameObject";
 		private const string _ModelName = "com.kode80.PixelRender.SpriteSheetMaker.ModelGameObject";
 		private const string _CameraName = "com.kode80.PixelRender.SpriteSheetMaker.PreviewCamera";
+		private const string _SpriteSheetExportFolder = "PixelRenderSpriteSheets";
 		private const int _PreviewLayer = 31;
 
 		private GUIHorizontal _gui;
@@ -48,6 +49,7 @@ namespace kode80.PixelRender
 		private GUIToggle _guiPingPong;
 		private GUISpriteSheetClips _guiAnimationClips;
 		private GUISpriteSheetMaterials _guiMaterials;
+		private GUITextField _guiSpriteSheetName;
 		private GUIButton _guiExport;
 		private GUIVertical _guiPreview;
 
@@ -57,6 +59,7 @@ namespace kode80.PixelRender
 		private GameObject _rootGameObject;
 		private GameObject _modelGameObject;
 		private float _lastFrameTime;
+
 
 		[MenuItem( "Window/kode80/PixelRender/Sprite Sheet Maker")]
 		public static void Init()
@@ -68,6 +71,8 @@ namespace kode80.PixelRender
 
 		void OnEnable()
 		{
+			CreateExportFolderIfNeeded();
+
 			_lastFrameTime = Time.realtimeSinceStartup;
 
 			_gui = new GUIHorizontal();
@@ -109,12 +114,13 @@ namespace kode80.PixelRender
 			_guiPingPong = loopFoldout.Add( new GUIToggle( new GUIContent( "Pingpong"), RenderPreviewAction)) as GUIToggle;
 
 			GUIFoldout outlineFoldout = _guiSide.Add( new GUIFoldout( new GUIContent( "Outline Effect"))) as GUIFoldout;
-			GUIColorField outlineColor = outlineFoldout.Add( new GUIColorField( new GUIContent( "Outline Color"), 
+			GUIColorField outlineColor = outlineFoldout.Add( new GUIColorField( new GUIContent( "Color"), 
 				OutlineColorChanged)) as GUIColorField;
-			GUISlider outlineThreshold = outlineFoldout.Add( new GUISlider( new GUIContent( "Outline Threshold"), 
+			GUISlider outlineThreshold = outlineFoldout.Add( new GUISlider( new GUIContent( "Threshold"), 
 				0.05f, 0.0f, 0.05f, OutlineThresholdChanged)) as GUISlider;
 
 			_guiSide.Add( new GUISpace());
+			_guiSpriteSheetName = _guiSide.Add( new GUITextField( new GUIContent( "Sprite Sheet Name"))) as GUITextField;
 			_guiExport = _guiSide.Add( new GUIButton( new GUIContent( "Export Sprite Sheet"), ExportSpriteSheet)) as GUIButton;
 
 			_guiPreview = _gui.Add( new GUIVertical( GUILayout.ExpandWidth( true), GUILayout.ExpandHeight( true))) as GUIVertical;
@@ -150,6 +156,7 @@ namespace kode80.PixelRender
 			_guiEndRotation = null;
 			_guiLoopCount = null;
 			_guiPingPong = null;
+			_guiSpriteSheetName = null;
 			_guiExport = null;
 			_guiPreview = null;
 		}
@@ -178,6 +185,8 @@ namespace kode80.PixelRender
 		{
 			if( _gui != null)
 			{
+				EditorGUIUtility.labelWidth = 110.0f;
+
 				_gui.OnGUI();
 
 				if( Event.current.rawType == EventType.Repaint && _previewTexture != null && _previewCamera != null)
@@ -194,6 +203,7 @@ namespace kode80.PixelRender
 		private void GameObjectChanged( GUIBase sender)
 		{
 			GUIObjectField<GameObject> gameObjectField = sender as GUIObjectField<GameObject>;
+			_guiSpriteSheetName.value = GetExportNameForGameObject( gameObjectField.value);
 
 			if( _modelGameObject != null)
 			{
@@ -303,7 +313,7 @@ namespace kode80.PixelRender
 			sheetTexture.ReadPixels( new Rect( Vector2.zero, new Vector2( sheet.width, sheet.height)), 0, 0);
 			RenderTexture.active = null;
 
-			string path = "Assets/TestSheet.png";
+			string path = GetExportPath();
 			SaveTexture( sheetTexture, path);
 			AssetDatabase.Refresh( ImportAssetOptions.ForceUpdate);
 			UpdateSpriteImportSettings( path);
@@ -315,6 +325,45 @@ namespace kode80.PixelRender
 		}
 
 		#endregion
+
+		private void CreateExportFolderIfNeeded()
+		{
+			string folder = "Assets/" + _SpriteSheetExportFolder;
+
+			if( AssetDatabase.IsValidFolder( folder) == false) {
+				AssetDatabase.CreateFolder( "Assets", _SpriteSheetExportFolder);
+			}
+		}
+
+		private string GetExportNameForGameObject( GameObject gameObject)
+		{
+			if( gameObject == null) { return ""; }
+
+			string name = AssetDatabase.GetAssetPath( gameObject);
+			string postfix = "";
+
+			if( name.Length < 1) {
+				name = AssetDatabase.GetAssetOrScenePath( gameObject); 
+				postfix = "_" + gameObject.name;
+			}
+
+			name = Path.GetFileNameWithoutExtension( name);
+			name += postfix;
+
+			return name;
+		}
+
+		private string GetExportPath()
+		{
+			string name = _guiSpriteSheetName.value;
+
+			if( name == null || name.Length < 1) { name = "PixelRenderSpriteSheet"; }
+
+			string path = "Assets/" + _SpriteSheetExportFolder + "/" + name + ".png";
+			path = AssetDatabase.GenerateUniqueAssetPath( path);
+
+			return path;
+		}
 
 		private void SaveTexture( Texture2D texture, string assetPath)
 		{
