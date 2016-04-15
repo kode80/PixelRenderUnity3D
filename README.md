@@ -10,7 +10,11 @@ If you'd like to use PixelRender for commercial purposes, or support this & futu
 The latest packaged version can be downloaded here: [PixelRender.unitypackage](http://kode80.com/downloads/assets/PixelRender.unitypackage)
 
 ## ChangeLog
-### PixelRender 1.1 (March 9th 2016):
+### PixelRender 1.2.0 (April 15th 2016):
+* Updated included UnityTools
+* PixelRender can now be updated directly from the editor (Windows/kode80/Check for Asset Updates)
+
+### PixelRender 1.1.0 (March 9th 2016):
 * Palettize Texture tool:
 	* Displays a progress bar and can be canceled
 	* Optimized to convert significantly faster
