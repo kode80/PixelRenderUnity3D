@@ -27,43 +27,25 @@ using System.Collections;
 
 namespace kode80.GUIWrapper
 {
-	public class GUIDelayedIntField : GUIBase 
+	public class GUILabel : GUIBase 
 	{
-		private int _previousValue;
-		public int previousValue { get { return _previousValue; } }
-		public int value;
-		public int minValue;
-		public int maxValue;
-
 		private GUIContent _content;
 		public GUIContent content { get { return _content; } }
 
-		public GUIDelayedIntField( GUIContent content, int value=0, int minValue=0, int maxValue=0, OnGUIAction action=null)
+		public GUIStyle style;
+		
+		public GUILabel( GUIContent content)
 		{
-			this.value = value;
-			_previousValue = value;
-			this.minValue = minValue;
-			this.maxValue = maxValue;
-
 			_content = content;
-			if( action != null)
-			{
-				onGUIAction += action;
-			}
 		}
-
+		
 		protected override void CustomOnGUI ()
 		{
-#if UNITY_5_3
-            int newValue = EditorGUILayout.DelayedIntField( _content, value);
-#else
-            int newValue = EditorGUILayout.IntField(_content, value);
-#endif
-            if( newValue != value && newValue >= minValue && newValue <= maxValue)
-			{
-				_previousValue = value;
-				value = newValue;
-				CallGUIAction();
+			if( style == null) {
+				GUILayout.Label( _content);
+			}
+			else {
+				GUILayout.Label( _content, style);
 			}
 		}
 	}

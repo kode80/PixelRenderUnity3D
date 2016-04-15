@@ -1,0 +1,9 @@
+<asset>
+	<name>PixelRender</name>
+	<author>kode80</author>
+	<version>1.2.0</version>
+	<notes>* Updated UnityTools for auto updating
+	</notes>
+	<package-uri>http://kode80.com/downloads/assets/PixelRender.unitypackage</package-uri>
+	<version-uri>https://raw.github.com/kode80/PixelRenderUnity3D/master/Assets/kode80/PixelRender/AssetVersion.xml</version-uri>
+</asset>

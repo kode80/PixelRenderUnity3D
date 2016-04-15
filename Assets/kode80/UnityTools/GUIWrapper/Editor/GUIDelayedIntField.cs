@@ -27,25 +27,41 @@ using System.Collections;
 
 namespace kode80.GUIWrapper
 {
-	public class GUIScrollView : GUIBaseContainer 
+	public class GUIDelayedIntField : GUIBase 
 	{
-		public GUILayoutOption[] layoutOptions;
+		private int _previousValue;
+		public int previousValue { get { return _previousValue; } }
+		public int value;
+		public int minValue;
+		public int maxValue;
 
-		private Vector2 _scrollPosition;
+		private GUIContent _content;
+		public GUIContent content { get { return _content; } }
 
-		public GUIScrollView( params GUILayoutOption[] options)
+		public GUIDelayedIntField( GUIContent content, int value=0, int minValue=0, int maxValue=0, OnGUIAction action=null)
 		{
-			layoutOptions = options;
+			this.value = value;
+			_previousValue = value;
+			this.minValue = minValue;
+			this.maxValue = maxValue;
+
+			_content = content;
+			if( action != null)
+			{
+				onGUIAction += action;
+			}
 		}
 
-		protected override void BeginContainerOnGUI()
+		protected override void CustomOnGUI ()
 		{
-			_scrollPosition = EditorGUILayout.BeginScrollView( _scrollPosition, layoutOptions);
-		}
-		
-		protected override void EndContainerOnGUI()
-		{
-			EditorGUILayout.EndScrollView();
+			int newValue = EditorGUILayout.DelayedIntField( _content, value);
+
+			if( newValue != value && newValue >= minValue && newValue <= maxValue)
+			{
+				_previousValue = value;
+				value = newValue;
+				CallGUIAction();
+			}
 		}
 	}
 }

@@ -27,19 +27,31 @@ using System.Collections;
 
 namespace kode80.GUIWrapper
 {
-	public class GUILabel : GUIBase 
+	public class GUIColorField : GUIBase 
 	{
+		public Color color;
+		
 		private GUIContent _content;
 		public GUIContent content { get { return _content; } }
 		
-		public GUILabel( GUIContent content)
+		public GUIColorField( GUIContent content, OnGUIAction action=null)
 		{
 			_content = content;
+			if( action != null)
+			{
+				onGUIAction += action;
+			}
 		}
 		
 		protected override void CustomOnGUI ()
 		{
-			GUILayout.Label( _content);
+			Color newColor = _content == null ? EditorGUILayout.ColorField( color) :
+												EditorGUILayout.ColorField( _content, color);
+			if( newColor != color)
+			{
+				color = newColor;
+				CallGUIAction();
+			}
 		}
 	}
 }

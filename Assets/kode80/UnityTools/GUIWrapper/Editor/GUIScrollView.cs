@@ -27,36 +27,25 @@ using System.Collections;
 
 namespace kode80.GUIWrapper
 {
-	public class GUITextureField : GUIBase 
+	public class GUIScrollView : GUIBaseContainer 
 	{
-		public Texture2D texture;
+		public GUILayoutOption[] layoutOptions;
 
-		private GUIContent _content;
-		public GUIContent content { get { return _content; } }
-		
-		public GUITextureField( GUIContent content, OnGUIAction action=null, OnGUIPreAction preAction=null)
+		private Vector2 _scrollPosition;
+
+		public GUIScrollView( params GUILayoutOption[] options)
 		{
-			_content = content;
-			if( preAction != null)
-			{
-				onGUIPreAction += preAction;
-			}
-
-			if( action != null)
-			{
-				onGUIAction += action;
-			}
+			layoutOptions = options;
 		}
-		
-		protected override void CustomOnGUI ()
+
+		protected override void BeginContainerOnGUI()
 		{
-			Texture2D newTexture = EditorGUILayout.ObjectField( _content, texture, typeof( Texture2D), false) as Texture2D;
-			if( newTexture != texture)
-			{
-				CallGUIPreAction();
-				texture = newTexture;
-				CallGUIAction();
-			}
+			_scrollPosition = EditorGUILayout.BeginScrollView( _scrollPosition, layoutOptions);
+		}
+
+		protected override void EndContainerOnGUI()
+		{
+			EditorGUILayout.EndScrollView();
 		}
 	}
 }

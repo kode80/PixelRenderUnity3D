@@ -27,38 +27,34 @@ using System.Collections;
 
 namespace kode80.GUIWrapper
 {
-	public class GUIColorField : GUIBase 
+	public class GUITextureField : GUIBase 
 	{
-		public Color color;
-		
+		public Texture2D texture;
+
 		private GUIContent _content;
 		public GUIContent content { get { return _content; } }
-		
-		public GUIColorField( GUIContent content, OnGUIAction action=null)
+
+		public GUITextureField( GUIContent content, OnGUIAction action=null, OnGUIPreAction preAction=null)
 		{
 			_content = content;
+			if( preAction != null)
+			{
+				onGUIPreAction += preAction;
+			}
+
 			if( action != null)
 			{
 				onGUIAction += action;
 			}
 		}
-		
+
 		protected override void CustomOnGUI ()
 		{
-			Color newColor;
-
-			if( _content != null)
+			Texture2D newTexture = EditorGUILayout.ObjectField( _content, texture, typeof( Texture2D), false) as Texture2D;
+			if( newTexture != texture)
 			{
-				newColor = EditorGUILayout.ColorField( _content, color);
-			}
-			else
-			{
-				newColor = EditorGUILayout.ColorField( color);
-			}
-
-			if( newColor != color)
-			{
-				color = newColor;
+				CallGUIPreAction();
+				texture = newTexture;
 				CallGUIAction();
 			}
 		}
