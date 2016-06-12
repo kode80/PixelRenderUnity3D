@@ -1,6 +1,9 @@
 PixelRender ChangeLog
 ---------------------
 
+PixelRender 1.2.2 (June 12th 2016)
+* Fixed un-initialized warning in PixelArtShader under certain platforms when not using normal maps
+
 PixelRender 1.2.0 (April 15th 2016):
 * Updated included UnityTools
 * PixelRender can now be updated directly from within the editor (Windows/kode80/Check for Asset Updates)

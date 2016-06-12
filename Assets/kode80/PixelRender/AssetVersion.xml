@@ -1,8 +1,8 @@
 <asset>
 	<name>PixelRender</name>
 	<author>kode80</author>
-	<version>1.2.1</version>
-	<notes>* Updated UnityTools for auto updating
+	<version>1.2.2</version>
+	<notes>* Fixed un-initialized warning in PixelArtShader under certain platforms when not using normal maps
 	</notes>
 	<package-uri>http://kode80.com/downloads/assets/PixelRender.unitypackage</package-uri>
 	<version-uri>https://raw.github.com/kode80/PixelRenderUnity3D/master/Assets/kode80/PixelRender/AssetVersion.xml</version-uri>
