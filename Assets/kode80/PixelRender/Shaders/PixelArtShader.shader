@@ -62,11 +62,13 @@ Shader "kode80/PixelRender/PixelArtShader"
 				float3 normal : NORMAL;
 				float3 wsVertex : TEXCOORD1;
 				float4 screenUV : TEXCOORD2;
+                LIGHTING_COORDS(3,4)
 
-				half3 tspace0 : TEXCOORD3; // tangent.x, bitangent.x, normal.x
-                half3 tspace1 : TEXCOORD4; // tangent.y, bitangent.y, normal.y
-                half3 tspace2 : TEXCOORD5; // tangent.z, bitangent.z, normal.z
-                LIGHTING_COORDS(6,7)
+				#if _NORMALMAP
+				half3 tspace0 : TEXCOORD5; // tangent.x, bitangent.x, normal.x
+                half3 tspace1 : TEXCOORD6; // tangent.y, bitangent.y, normal.y
+                half3 tspace2 : TEXCOORD7; // tangent.z, bitangent.z, normal.z
+                #endif
 			};
 
 			sampler2D _MainTex;
